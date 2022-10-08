@@ -53,8 +53,10 @@ bash ./scripts/continue-exploration.sh ./explore/[prompt-hash]/[filename].png sq
 
 And make similar images from existing images:
 * normal: some limited amount of changes
-* change: wide changes, useful when totally changing style
-* refine: accurate changes, useful when honing in to specific style
+* unstuck: wide changes, useful when changing style
+* focus: accurate changes, useful when honing in to specific style
+* shake: shuffle things around a bit
+* unfocus: totally lose focus and think big
 ```sh
 bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png normal
 bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png change

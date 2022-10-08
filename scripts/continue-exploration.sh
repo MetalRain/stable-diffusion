@@ -35,4 +35,4 @@ then
 fi
 
 echo "Varying exploration $PROMPT_HASH with $ASPECT_RATIO images using scale $SCALE"
-exec "$BASE_DIR/scripts/explore.sh" "$VARY_FILE_NAME" "$TEXT_PROMPT" "$ASPECT_RATIO" "$SCALE"
+exec "$BASE_DIR/scripts/explore.sh" "$TEXT_PROMPT" "$ASPECT_RATIO" "$SCALE"

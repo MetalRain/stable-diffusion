@@ -191,15 +191,9 @@ def main():
         if loops > 0:
             sleep_seconds = 0
             if loops % 9 == 0:
-                if loops > 10:
-                    sleep_seconds = 10
-                else:
-                    sleep_seconds = 5
+                sleep_seconds = 15
             elif loops % 3 == 0:
-                if loops > 4:
-                    sleep_seconds = 3
-                else:
-                    sleep_seconds = 2
+                sleep_seconds = 5
             if sleep_seconds:
                 print(f'Sleeping for {sleep_seconds} seconds')
                 time.sleep(sleep_seconds)
