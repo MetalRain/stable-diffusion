@@ -69,7 +69,7 @@ do
             echo "Saving prompt.."
             PROMPT_HASH="$(bash $BASE_DIR/scripts/init-explore.sh "$prompt")"
             echo "Prompt saved, starting exploration.."
-            exec "$BASE_DIR/scripts/exploration.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
+            exec "$BASE_DIR/scripts/explore.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
         fi
         prompt="$new_prompt"
     fi

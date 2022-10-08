@@ -1,9 +1,9 @@
 #!/bin/bash -e
-# Explore more new images using image from exploration as base
+# Open exploration back in interactive mode
 #
 # Args: Image file, aspect ratio, scale
 # Example:
-# ./scripts/continue-exploration.sh [FILENAME] square 9
+# ./scripts/interactive-exploration.sh [FILENAME] square 9
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
 VARY_FILE_NAME="$1"
 ASPECT_RATIO="$2"
@@ -34,5 +34,5 @@ then
     exit 1
 fi
 
-echo "Varying exploration $PROMPT_HASH with $ASPECT_RATIO images using scale $SCALE"
-exec "$BASE_DIR/scripts/explore.sh" "$VARY_FILE_NAME" "$TEXT_PROMPT" "$ASPECT_RATIO" "$SCALE"
+echo "Starting interactive shell with exploration $PROMPT_HASH with $ASPECT_RATIO images using scale $SCALE"
+exec "$BASE_DIR/scripts/interactive.sh" "$TEXT_PROMPT" "$ASPECT_RATIO" "$SCALE"
