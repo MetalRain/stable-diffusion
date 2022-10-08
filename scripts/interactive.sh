@@ -37,8 +37,8 @@ while [[ ! -z "$prompt" ]];
 do 
     bash "$BASE_DIR/scripts/scratch.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
     echo "Current prompt: '$prompt'"
-    echo "How do you want to proceed?"
-    printf "Sample again with same prompt [enter], Edit prompt [e]\nAdjust scale [c], Change aspect ratio [a]\nSave prompt & explore further [s], Quit [q]"
+    echo "How do you want to proceed?, here are our options:"
+    printf "Sample new images with same prompt [enter], Edit prompt [e]\nAdjust scale [c], Change aspect ratio [a]\nSave & explore further [s], Quit [q]\n"
     read -e new_prompt
     if [[ ! -z "$new_prompt" ]];
     then
@@ -69,7 +69,7 @@ do
             echo "Saving prompt.."
             PROMPT_HASH="$(bash $BASE_DIR/scripts/init-explore.sh "$prompt")"
             echo "Prompt saved, starting exploration.."
-            exec "$BASE_DIR/explore/$PROMPT_HASH/explore.sh" "$ASPECT_RATIO" "7"
+            exec "$BASE_DIR/scripts/exploration.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
         fi
         prompt="$new_prompt"
     fi
