@@ -38,30 +38,27 @@ You should have `sd-v1-4.ckpt` file at root of this folder.
 Start from interactive CLI tool
 ```sh
 bash ./scripts/interactive.sh "Art piece" square
-bash ./scripts/interactive.sh "Nice view" landscape
-bash ./scripts/interactive.sh "Starry sky" portrait
+bash ./scripts/interactive.sh "Nice view" landscape 7
+bash ./scripts/interactive.sh "Starry sky" portrait 9
 ```
 
-Once you have something worthwhile, save prompt and tool starts exploring.
+Once you have found something worthwhile, save the prompt and tool starts exploring.
 
 Later you can also explore prompt with varying scales and aspect ratios
+to find more interesting images
 ```sh
-bash ./explore/[prompt-hash]/explore.sh portrait 7
-bash ./explore/[prompt-hash]/explore.sh square 9
+bash ./scripts/continue-exploration.sh ./explore/[prompt-hash]/[filename].png portrait 7
+bash ./scripts/continue-exploration.sh ./explore/[prompt-hash]/[filename].png square 10
 ```
 
-And make variations from existing images
+And make similar images from existing images
 ```sh
-bash ./explore/[prompt-hash]/vary.sh ./explore/[prompt-hash]/[image-file].png "" normal
-```
-
-Higher variation profile generates more extreme versions of same prompt
-```sh
-bash ./explore/[prompt-hash]/vary.sh ./explore/[prompt-hash]/[image-file].png "" high
+bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png normal
+bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png high
+bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png low
 ```
 
 You can also create new prompt by enhancing existing prompts
 ```sh
-cd ./explore/[prompt-hash]
-bash ./explore/[prompt-hash]/vary.sh ./explore/[prompt-hash]/[image-file].png ", words to be added to prompt" normal
+bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png normal ", in space" 
 ```

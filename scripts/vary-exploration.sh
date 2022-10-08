@@ -1,20 +1,20 @@
 #!/bin/bash -e
 # Vary more images using image from exploration as base
 #
-# Args: Image file, aspect ratio, vary amount
+# Args: Image file, vary amount, prompt_addition
 # Example:
-# ./scripts/vary-exploration.sh [FILENAME] square high
+# ./scripts/vary-exploration.sh [FILENAME] high ", natural sunlight"
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
 VARY_FILE_NAME="$1"
-ASPECT_RATIO="$2"
-if [[ -z "$ASPECT_RATIO" ]];
-then
-  ASPECT_RATIO="portrait"
-fi
-VARY_AMOUNT="$3"
+VARY_AMOUNT="$2"
 if [[ -z "$VARY_AMOUNT" ]];
 then
   VARY_AMOUNT="normal"
+fi
+PROMPT_ADDITION="$3"
+if [[ -z "$PROMPT_ADDITION" ]];
+then
+  PROMPT_ADDITION=""
 fi
 
 PROMPT_HASH="$(basename "$(dirname "$(realpath $VARY_FILE_NAME)")")"
@@ -26,7 +26,7 @@ then
     exit 1
 fi
 
-TEXT_PROMPT="$(cat $BASE_DIR/explore/$PROMPT_HASH/prompt.txt)"
+TEXT_PROMPT="$(cat $BASE_DIR/explore/$PROMPT_HASH/prompt.txt)$PROMPT_ADDITION"
 
 if [[ -z "$TEXT_PROMPT" ]];
 then
@@ -34,5 +34,5 @@ then
     exit 1
 fi
 
-echo "Varying exploration $PROMPT_HASH with $ASPECT_RATIO images using $VARY_AMOUNT of variation"
+echo "Varying exploration $PROMPT_HASH using $VARY_AMOUNT variation"
 exec "$BASE_DIR/scripts/vary.sh" "$VARY_FILE_NAME" "$TEXT_PROMPT" "$VARY_AMOUNT"
