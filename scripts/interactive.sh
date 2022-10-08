@@ -38,7 +38,7 @@ do
     bash "$BASE_DIR/scripts/scratch.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
     echo "Current prompt: '$prompt'"
     echo "How do you want to proceed?"
-    echo "Sample again with same prompt [enter], Edit prompt [e], Save prompt & explore further [s], Quit [q]"
+    printf "Sample again with same prompt [enter], Edit prompt [e]\nAdjust scale [c], Change aspect ratio [a]\nSave prompt & explore further [s], Quit [q]"
     read -e new_prompt
     if [[ ! -z "$new_prompt" ]];
     then
@@ -46,6 +46,18 @@ do
         then
             echo "Edit prompt:"
             read -e -i "$prompt" new_prompt
+        fi
+        if [[ "c" == "$new_prompt" ]];
+        then
+            echo "Give new scale, numeric value between 1-30, use . as decimal separator:"
+            read -e SCALE
+            new_prompt="$prompt"
+        fi
+        if [[ "a" == "$new_prompt" ]];
+        then
+            echo "Give new aspect ratio, either square, portrait or landscape:"
+            read -e ASPECT_RATIO
+            new_prompt="$prompt"
         fi
         if [[ "q" == "$new_prompt" ]];
         then

@@ -51,11 +51,14 @@ bash ./scripts/continue-exploration.sh ./explore/[prompt-hash]/[filename].png po
 bash ./scripts/continue-exploration.sh ./explore/[prompt-hash]/[filename].png square 10
 ```
 
-And make similar images from existing images
+And make similar images from existing images:
+* normal: some limited amount of changes
+* change: wide changes, useful when totally changing style
+* refine: accurate changes, useful when honing in to specific style
 ```sh
 bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png normal
-bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png high
-bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png low
+bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png change
+bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png refine
 ```
 
 You can also create new prompt by enhancing existing prompts

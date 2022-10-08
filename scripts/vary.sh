@@ -45,7 +45,17 @@ then
         --strenghts 0.3,0.35,0.4,0.45,0.5,0.55 \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi
-if [[ "$VARY_AMOUNT" == "high" ]];
+if [[ "$VARY_AMOUNT" == "change" ]];
+then
+    python "$BASE_DIR/img2img.py" \
+        --init-img "$1" \
+        --prompt "$2" \
+        --n_samples 1000 \
+        --scales 5,6,7 \
+        --strenghts 0.8,0.8,0.8 \
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
+fi
+if [[ "$VARY_AMOUNT" == "refine" ]];
 then
     python "$BASE_DIR/img2img.py" \
         --init-img "$1" \
