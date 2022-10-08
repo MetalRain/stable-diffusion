@@ -52,11 +52,11 @@ bash ./scripts/continue-exploration.sh ./explore/[prompt-hash]/[filename].png sq
 ```
 
 And make similar images from existing images:
-* normal: some limited amount of changes
-* unstuck: wide changes, useful when changing style
-* focus: accurate changes, useful when honing in to specific style
-* shake: shuffle things around a bit
-* unfocus: totally lose focus and think big
+* normal: some mixture of focusing and shaking, useful when you don't really know how to proceed
+* shake: shuffle things around a bit, use when image is good but bit bland
+* focus: enhance things already in picture, useful when honing in to specific style
+* unstuck: changes to structure or style, may lose some desired qualities from image
+* unfocus: totally lose focus and think big, good for discovery and then honing back in
 ```sh
 bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png normal
 bash ./scripts/vary-exploration.sh ./explore/[prompt-hash]/[filename].png change
