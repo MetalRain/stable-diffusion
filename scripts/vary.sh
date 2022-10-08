@@ -6,7 +6,7 @@ if [[ -z "$VARY_AMOUNT" ]];
 then
   VARY_AMOUNT="normal"
 fi
-echo "Varying image $1 for prompt: $2"
+echo "Varying image $1 for prompt: '$2' using $VARY_AMOUNT of variation"
 prompt_md5=$(bash  ~/repos/stable-diffusion/scripts/start-explore.sh "$2")
 echo "Images will be in ./explore/$prompt_md5/"
 if [[ "$VARY_AMOUNT" == "normal" ]];

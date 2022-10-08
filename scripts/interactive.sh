@@ -52,8 +52,8 @@ do
             echo "Saving prompt.."
             prompt_md5=$(bash ~/repos/stable-diffusion/scripts/start-explore.sh "$prompt")
             echo "Prompt saved, starting exploration.."
-            cd "~/repos/stable-diffusion/explore/$prompt_md5"
-            exec "~/repos/stable-diffusion/explore/$prompt_md5/explore.sh" 7
+            cd "./explore/$prompt_md5"
+            exec bash "./explore/$prompt_md5/explore.sh" 7
         fi
         prompt="$new_prompt"
     fi
