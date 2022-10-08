@@ -30,7 +30,9 @@ curl https://www.googleapis.com/storage/v1/b/aai-blog-files/o/sd-v1-4.ckpt?alt=m
 5. Explore prompts images
 Interactively
 ```sh
-bash ./scripts/interactive.sh
+bash ./scripts/interactive.sh "Art piece" square
+bash ./scripts/interactive.sh "Nice view" landscape
+bash ./scripts/interactive.sh "Starry sky" portrait
 ```
 
 6. Explore saved prompts
@@ -44,8 +46,7 @@ bash ./explore/[prompt-hash]/explore.sh 9
 
 Some variations with same prompt
 ```sh
-cd ./explore/[prompt-hash]
-bash ./vary.sh ./explore/[prompt-hash]/[file-to-vary] "" normal
+bash ./explore/[prompt-hash]/vary.sh ./explore/[prompt-hash]/[file-to-vary].png "" normal
 ```
 
 More variations with same prompt

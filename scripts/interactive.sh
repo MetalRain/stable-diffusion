@@ -1,37 +1,41 @@
 #!/bin/bash -e
 # Interactively make new images from prompts
 # Save prompts for further exploration
-function cleanup {
-  echo "Cleaning up.."
-  cd ~/repos/stable-diffusion
-}
-trap cleanup EXIT
-mkdir -p  ~/repos/stable-diffusion/explore/scratch
+#
+# Args: Prompt, aspect ratio, scale
+# Example:
+# ./scripts/interactive.sh "Nice view" portrait 9
+BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
+mkdir -p  $BASE_DIR/explore/scratch
 
-USER_SCALE=$1
-if [[ -z "$USER_SCALE" ]];
+TEXT_PROMPT="$1"
+ASPECT_RATIO="$2"
+if [[ -z "$ASPECT_RATIO" ]];
 then
-  USER_SCALE="5"
+  ASPECT_RATIO="portrait"
+fi
+SCALE="$3"
+if [[ -z "$SCALE" ]];
+then
+  SCALE="5"
 fi
 
-echo "Give prompt for next image:"
-read prompt
-if [[ "q" == "$prompt" ]];
+if [[ -z "$TEXT_PROMPT" ]];
 then
-    echo "Closing off.."
-    exit 0
+    echo "Give prompt for next image:"
+    read prompt
+    if [[ "q" == "$prompt" ]];
+    then
+        echo "Closing off.."
+        exit 0
+    fi
+else
+    prompt="$TEXT_PROMPT"
 fi
+
 while [[ ! -z "$prompt" ]];
 do 
-    echo "Exploring portraits for prompt: '$prompt'"
-    python ./txt2img.py \
-        --prompt "$prompt" \
-        --ckpt sd-v1-4.ckpt \
-        --n_samples 3 \
-        --W 448 \
-        --H 768 \
-        --scales "$USER_SCALE" \
-        --outdir ./explore/scratch
+    bash "$BASE_DIR/scripts/scratch.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
     echo "Current prompt: '$prompt'"
     echo "Continue with same [enter], Edit prompt [e], Save prompt & exit [s], Quit [q]"
     read -e new_prompt
@@ -50,10 +54,9 @@ do
         if [[ "s" == "$new_prompt" ]];
         then
             echo "Saving prompt.."
-            prompt_md5=$(bash ~/repos/stable-diffusion/scripts/start-explore.sh "$prompt")
+            PROMPT_HASH="$(bash $BASE_DIR/scripts/init-explore.sh "$prompt")"
             echo "Prompt saved, starting exploration.."
-            cd "./explore/$prompt_md5"
-            exec bash "./explore/$prompt_md5/explore.sh" 7
+            exec "$BASE_DIR/explore/$PROMPT_HASH/explore.sh" "$ASPECT_RATIO" "7"
         fi
         prompt="$new_prompt"
     fi
