@@ -189,17 +189,24 @@ def main():
         print(f'Loop {loops}')
 
         if loops > 0:
+            sleep_seconds = 0
             if loops % 9 == 0:
-                print('Sleeping for 7 seconds')
-                time.sleep(7)
-                print('Done')
+                if loops > 10:
+                    sleep_seconds = 10
+                else:
+                    sleep_seconds = 5
             elif loops % 3 == 0:
-                print('Sleeping for 3 seconds')
-                time.sleep(3)
+                if loops > 4:
+                    sleep_seconds = 3
+                else:
+                    sleep_seconds = 2
+            if sleep_seconds:
+                print(f'Sleeping for {sleep_seconds} seconds')
+                time.sleep(sleep_seconds)
                 print('Done')
 
         # Random seed and init sampler
-        seed = static_seed or random.randint(0, 10000000)
+        seed = static_seed or random.randint(0, 1_000_000_000)
         seed_everything(seed)
         sampler = DDIMSampler(model)
         sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)

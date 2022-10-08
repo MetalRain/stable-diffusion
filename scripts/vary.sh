@@ -1,10 +1,13 @@
 #!/bin/bash -e
-# Vary image "normal" amount one based on prompt
-# bash ./scripts/vary.sh [FILENAME] "Nice view" high
+# Vary image based on prompt
+#
+# Args: Image file, prompt, vary amount
+# Example:
+# ./scripts/vary.sh [FILENAME] "Nice view" high
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
 VARY_FILE_NAME="$1"
 TEXT_PROMPT="$2"
-VARY_AMOUNT=$3
+VARY_AMOUNT="$3"
 if [[ -z "$VARY_AMOUNT" ]];
 then
   VARY_AMOUNT="normal"

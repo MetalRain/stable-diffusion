@@ -151,17 +151,24 @@ def main():
         print(f'Loop {loops}')
 
         if loops > 0:
+            sleep_seconds = 0
             if loops % 9 == 0:
-                print('Sleeping for 5 seconds')
-                time.sleep(5)
-                print('Done')
+                if loops > 10:
+                    sleep_seconds = 20
+                else:
+                    sleep_seconds = 10
             elif loops % 3 == 0:
-                print('Sleeping for 2 seconds')
-                time.sleep(2)
+                if loops > 4:
+                    sleep_seconds = 5
+                else:
+                    sleep_seconds = 2
+            if sleep_seconds:
+                print(f'Sleeping for {sleep_seconds} seconds')
+                time.sleep(sleep_seconds)
                 print('Done')
 
         # Random seed and init sampler
-        seed = static_seed or random.randint(0, 10000000)
+        seed = static_seed or random.randint(0, 1_000_000_000)
         seed_everything(seed)
         sampler = PLMSSampler(model)
         start_code = torch.randn([1, opt.C, opt.H // opt.f, opt.W // opt.f], device=device)
