@@ -22,19 +22,14 @@ conda env create -f environment.yaml
 conda activate ldm
 ```
 
-4. Download stable diffusion weights (in stable-diffusion repo)
+4. Download stable diffusion weights
 ```sh
 curl https://www.googleapis.com/storage/v1/b/aai-blog-files/o/sd-v1-4.ckpt?alt=media > sd-v1-4.ckpt
 ```
 
-5. Generate images (in stable-diffusion repo)
+5. Generate images
+Interactively
 ```sh
-python scripts/txt2img.py --prompt "small dragon with long red tail" --plms --ckpt sd-v1-4.ckpt --skip_grid --n_samples 1 --outdir ../images
-```
-
-or more interactively
-
-```sh
-bash ./scripts/interactive-explore.sh
+bash ./scripts/interactive.sh
 ```
 

@@ -128,13 +128,13 @@ def main():
     parser.add_argument(
         "--ckpt",
         type=str,
-        default="stable-diffusion/sd-v1-4.ckpt",
+        default="sd-v1-4.ckpt",
         help="path to checkpoint of model",
     )
     parser.add_argument(
         "--seed",
-        type=int,
-        default=42,
+        type=str,
+        default="",
         help="the seed (for reproducible sampling)",
     )
     parser.add_argument(
@@ -174,9 +174,8 @@ def main():
     strenghts_str = opt.strenghts or ','.join(['0.5'] * len(scales))
     strenghts = [float(s) for s in strenghts_str.split(',')]
     # strength for noising/unnoising. 1.0 corresponds to full destruction of information in init image"
-    scaling_options = zip(scales, strenghts)
+    scaling_options = list(zip(scales, strenghts))
     
-
     max_loops = opt.n_samples
     static_seed = None
     if opt.seed:
@@ -191,12 +190,12 @@ def main():
 
         if loops > 0:
             if loops % 9 == 0:
-                print('Sleeping for 5 seconds')
-                time.sleep(5)
+                print('Sleeping for 7 seconds')
+                time.sleep(7)
                 print('Done')
             elif loops % 3 == 0:
-                print('Sleeping for 2 seconds')
-                time.sleep(2)
+                print('Sleeping for 3 seconds')
+                time.sleep(3)
                 print('Done')
 
         # Random seed and init sampler
@@ -209,7 +208,6 @@ def main():
         with torch.no_grad():
             with precision_scope("cuda"):
                 with model.ema_scope():
-
                     for scale, strength in scaling_options:
                         print(f'Scale: {scale}, strenght: {strength}')
 

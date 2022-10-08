@@ -108,7 +108,7 @@ def main():
     parser.add_argument(
         "--ckpt",
         type=str,
-        default="stable-diffusion/sd-v1-4.ckpt",
+        default="sd-v1-4.ckpt",
         help="path to checkpoint of model",
     )
     parser.add_argument(
