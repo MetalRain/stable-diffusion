@@ -18,6 +18,7 @@ then
   SCALE="7"
 fi
 echo "Exploring $ASPECT_RATIO images for prompt: '$TEXT_PROMPT' using scale $SCALE"
+echo "You can find images in $BASE_DIR/explore/scratch"
 if [[ "$ASPECT_RATIO" == "portrait" ]];
 then
     python "$BASE_DIR/txt2img.py" \

@@ -37,7 +37,8 @@ while [[ ! -z "$prompt" ]];
 do 
     bash "$BASE_DIR/scripts/scratch.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
     echo "Current prompt: '$prompt'"
-    echo "Continue with same [enter], Edit prompt [e], Save prompt & exit [s], Quit [q]"
+    echo "How do you want to proceed?"
+    echo "Sample again with same prompt [enter], Edit prompt [e], Save prompt & explore further [s], Quit [q]"
     read -e new_prompt
     if [[ ! -z "$new_prompt" ]];
     then
