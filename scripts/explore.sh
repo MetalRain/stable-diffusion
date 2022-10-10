@@ -28,7 +28,8 @@ then
         --W 448 \
         --H 768 \
         --scales "$SCALE" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+        --waits "1,5,10"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
@@ -38,15 +39,17 @@ then
         --W 768 \
         --H 448 \
         --scales "$SCALE" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+        --waits "1,5,10"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
     python $BASE_DIR/txt2img.py \
         --prompt "$TEXT_PROMPT" \
         --n_samples 1000 \
-        --W 512 \
-        --H 512 \
+        --W 640 \
+        --H 640 \
         --scales "$SCALE" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+        --waits "1,5,10"
 fi

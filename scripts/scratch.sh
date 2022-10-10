@@ -27,7 +27,8 @@ then
         --W 448 \
         --H 768 \
         --scales "$SCALE" \
-        --outdir "$BASE_DIR/explore/scratch"
+        --outdir "$BASE_DIR/explore/scratch" \
+        --waits "1,0,0"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
@@ -37,15 +38,17 @@ then
         --W 768 \
         --H 448 \
         --scales "$SCALE" \
-        --outdir "$BASE_DIR/explore/scratch"
+        --outdir "$BASE_DIR/explore/scratch" \
+        --waits "1,0,0"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
     python "$BASE_DIR/txt2img.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples 3 \
-        --W 512 \
-        --H 512 \
+        --W 640 \
+        --H 640 \
         --scales "$SCALE" \
-        --outdir "$BASE_DIR/explore/scratch"
+        --outdir "$BASE_DIR/explore/scratch" \
+        --waits "1,0,0"
 fi

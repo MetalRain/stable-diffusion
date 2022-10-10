@@ -150,6 +150,12 @@ def main():
         choices=["full", "autocast"],
         default="autocast"
     )
+    parser.add_argument(
+        "--save_middle",
+        action='store_true',
+        help="Save also intermediate images",
+        default=False
+    )
 
     opt = parser.parse_args()
     
@@ -203,6 +209,8 @@ def main():
         sampler = DDIMSampler(model)
         sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
 
+        current_latent = init_latent
+
         precision_scope = autocast if opt.precision == "autocast" else nullcontext
         with torch.no_grad():
             with precision_scope("cuda"):
@@ -226,7 +234,7 @@ def main():
                         print(f"target t_enc is {t_enc} steps")
 
                         # encode (scaled latent)
-                        z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]).to(device))
+                        z_enc = sampler.stochastic_encode(current_latent, torch.tensor([t_enc]).to(device))
                         # decode it
                         samples = sampler.decode(
                             z_enc,
@@ -237,14 +245,26 @@ def main():
                         )
 
                         x_samples = model.decode_first_stage(samples)
-                        x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                        if opt.save_middle:
+                            x_samples_img = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
+                            for x_sample in x_samples_img:
+                                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
+                                img = Image.fromarray(x_sample.astype(np.uint8))
+                                img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+                                img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_strenght-{strength}_seed-{seed}.png"))
 
+                        # Feed image back to machine
+                        current_latent = model.get_first_stage_encoding(model.encode_first_stage(x_samples)) 
+
+                    # Save result after all scaling options have been added
+                    if not opt.save_middle:
+                        x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
                         for x_sample in x_samples:
                             x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                             img = Image.fromarray(x_sample.astype(np.uint8))
                             img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
                             img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_strenght-{strength}_seed-{seed}.png"))
-                        images = images + 1
+                    images = images + 1
 
         loops = loops + 1
     print("Done")

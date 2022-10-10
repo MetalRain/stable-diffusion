@@ -100,6 +100,12 @@ def main():
         help="Use static seed, forces n_samples to 1"
     )
     parser.add_argument(
+        "--waits",
+        type=str,
+        default="5,15,30",
+        help="Wait times in seconds: after single image, after three images, after 9 images",
+    )
+    parser.add_argument(
         "--config",
         type=str,
         default="stable-diffusion/configs/stable-diffusion/v1-inference.yaml",
@@ -140,6 +146,8 @@ def main():
     scales = [float(s) for s in opt.scales.split(',')]
     # unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
 
+    wait_single, wait_three, wait_nine = [int(s) for s in opt.waits.split(',')]
+
     max_loops = opt.n_samples
     static_seed = None
     if opt.seed:
@@ -147,25 +155,9 @@ def main():
         max_loops = 1
 
     loops = 0
+    images = 0
     while loops < max_loops:
         print(f'Loop {loops}')
-
-        if loops > 0:
-            sleep_seconds = 0
-            if loops % 9 == 0:
-                if loops > 10:
-                    sleep_seconds = 20
-                else:
-                    sleep_seconds = 10
-            elif loops % 3 == 0:
-                if loops > 4:
-                    sleep_seconds = 5
-                else:
-                    sleep_seconds = 2
-            if sleep_seconds:
-                print(f'Sleeping for {sleep_seconds} seconds')
-                time.sleep(sleep_seconds)
-                print('Done')
 
         # Random seed and init sampler
         seed = static_seed or random.randint(0, 1_000_000_000)
@@ -179,6 +171,17 @@ def main():
                 with model.ema_scope():
 
                     for scale in scales:
+                        # Don't overheat the GPU ;)
+                        if images > 0:
+                            sleep_seconds = wait_single
+                            if images % 9 == 0:
+                                sleep_seconds = wait_nine
+                            elif images % 3 == 0:
+                                sleep_seconds = wait_three
+                            print(f'Sleeping for {sleep_seconds} seconds')
+                            time.sleep(sleep_seconds)
+                            print('Done')
+
                         ddim_steps = 10 + int(scale * 5)
 
                         shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
@@ -202,6 +205,7 @@ def main():
                             img = Image.fromarray(x_sample.astype(np.uint8))
                             img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
                             img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_seed-{seed}.png"))
+                        images = images + 1
         loops = loops + 1
     print("Done")
 
