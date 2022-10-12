@@ -179,7 +179,6 @@ def main():
     assert os.path.isfile(opt.init_img)
     init_image = load_img(opt.init_img).to(device)
     init_image = repeat(init_image, '1 ... -> b ...', b=1)
-    init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
     scales = [float(s) for s in opt.scales.split(',')]
     # unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
@@ -209,7 +208,7 @@ def main():
         sampler = DDIMSampler(model)
         sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
 
-        current_latent = init_latent
+        current_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
         precision_scope = autocast if opt.precision == "autocast" else nullcontext
         with torch.no_grad():
@@ -254,7 +253,8 @@ def main():
                                 img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_strenght-{strength}_seed-{seed}.png"))
 
                         # Feed image back to machine
-                        current_latent = model.get_first_stage_encoding(model.encode_first_stage(x_samples)) 
+                        current_latent = model.get_first_stage_encoding(model.encode_first_stage(x_samples))
+                        images = images + 1
 
                     # Save result after all scaling options have been added
                     if not opt.save_middle:
@@ -264,7 +264,6 @@ def main():
                             img = Image.fromarray(x_sample.astype(np.uint8))
                             img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
                             img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_strenght-{strength}_seed-{seed}.png"))
-                    images = images + 1
 
         loops = loops + 1
     print("Done")

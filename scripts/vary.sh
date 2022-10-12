@@ -18,6 +18,8 @@ then
   VARY_SAMPLES="3"
 fi
 
+WAITS="5,10,15"
+
 echo "Varying image '$VARY_FILE_NAME' for prompt: '$TEXT_PROMPT' using '$VARY_AMOUNT' transformation"
 PROMPT_HASH=$(bash $BASE_DIR/scripts/init-explore.sh "$TEXT_PROMPT")
 echo "Images will be in $BASE_DIR/explore/$PROMPT_HASH/"
@@ -30,7 +32,7 @@ then
         --scales "6,7,8,9" \
         --strenghts "0.35,0.4,0.45,0.5" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "mild" ]];
 then
@@ -41,7 +43,7 @@ then
         --scales "6,7,8,9" \
         --strenghts "0.2,0.25,0.3,0.35" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "unfocus" ]];
 then
@@ -52,7 +54,7 @@ then
         --scales "3,3.5,4" \
         --strenghts "0.8,0.85,0.9" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "fixit" ]];
 then
@@ -63,18 +65,29 @@ then
         --scales "4,6,9,11" \
         --strenghts "0.8,0.5,0.3,0.15" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "restyle" ]];
 then
     python "$BASE_DIR/img2img2img.py" \
         --init-img "$1" \
         --prompt "$2" \
-        --n_samples "$VARY_SAMPLES" \
-        --scales "5.5,7.2,9.8" \
-        --strenghts "0.45,0.4,0.35" \
+        --n_samples "$(( VARY_SAMPLES * 2 ))" \
+        --scales "5,7,11" \
+        --strenghts "0.5,0.4,0.3" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
+fi
+if [[ "$VARY_AMOUNT" == "timeskip" ]];
+then
+    python "$BASE_DIR/img2img2img.py" \
+        --init-img "$1" \
+        --prompt "$2" \
+        --n_samples "$VARY_SAMPLES" \
+        --scales "5,5,5" \
+        --strenghts "0.6,0.55,0.5" \
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "retouch" ]];
 then
@@ -85,7 +98,7 @@ then
         --scales "9,10,10,11" \
         --strenghts "0.2,0.2,0.2,0.15" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "shake" ]];
 then
@@ -96,7 +109,7 @@ then
         --scales "10,5,9,6,8,7" \
         --strenghts "0.3,0.35,0.4,0.45,0.5,0.55" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "unstuck" ]];
 then
@@ -107,7 +120,7 @@ then
         --scales "5,6,7" \
         --strenghts "0.8,0.8,0.8" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi
 if [[ "$VARY_AMOUNT" == "focus" ]];
 then
@@ -118,5 +131,5 @@ then
         --scales "12,11,10,9,9" \
         --strenghts "0.75,0.75,0.7,0.65,0.6" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "0,0,0"
+        --waits "$WAITS"
 fi

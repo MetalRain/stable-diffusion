@@ -173,7 +173,6 @@ def main():
     assert os.path.isfile(opt.init_img)
     init_image = load_img(opt.init_img).to(device)
     init_image = repeat(init_image, '1 ... -> b ...', b=1)
-    init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
     scales = [float(s) for s in opt.scales.split(',')]
     # unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
@@ -220,6 +219,8 @@ def main():
                             print('Done')
 
                         print(f'Scale: {scale}, strenght: {strength}')
+
+                        init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
 
                         assert 0. <= strength <= 1., 'can only work with strength in [0.0, 1.0]'
                         t_enc = int(strength * ddim_steps)

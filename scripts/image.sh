@@ -48,8 +48,8 @@ then
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
-        --W 640 \
-        --H 640 \
+        --W 576 \
+        --H 576 \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi

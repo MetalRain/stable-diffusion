@@ -16,6 +16,11 @@ if [[ -z "$PROMPT_ADDITION" ]];
 then
   PROMPT_ADDITION=""
 fi
+VARY_SAMPLES="$4"
+if [[ -z "$VARY_SAMPLES" ]];
+then
+  VARY_SAMPLES="3"
+fi
 
 PROMPT_HASH="$(basename "$(dirname "$(realpath $VARY_FILE_NAME)")")"
 echo "$PROMPT_HASH"
@@ -35,4 +40,4 @@ then
 fi
 
 echo "Varying exploration $PROMPT_HASH using $VARY_AMOUNT variation"
-exec "$BASE_DIR/scripts/vary.sh" "$VARY_FILE_NAME" "$TEXT_PROMPT" "$VARY_AMOUNT"
+exec "$BASE_DIR/scripts/vary.sh" "$VARY_FILE_NAME" "$TEXT_PROMPT" "$VARY_AMOUNT" "$VARY_SAMPLES"

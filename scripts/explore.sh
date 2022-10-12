@@ -17,6 +17,7 @@ if [[ -z "$SCALE" ]];
 then
   SCALE="7"
 fi
+WAITS="10,30,60"
 echo "Generating $ASPECT_RATIO for prompt: '$TEXT_PROMPT' using scale $SCALE"
 PROMPT_HASH=$(bash $BASE_DIR/scripts/init-explore.sh "$TEXT_PROMPT")
 echo "Images will be in $BASE_DIR/explore/$PROMPT_HASH/"
@@ -29,7 +30,7 @@ then
         --H 768 \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "1,5,10"
+        --waits "$WAITS"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
@@ -40,16 +41,16 @@ then
         --H 448 \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "1,5,10"
+        --waits "$WAITS"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
     python $BASE_DIR/txt2img.py \
         --prompt "$TEXT_PROMPT" \
         --n_samples 1000 \
-        --W 640 \
-        --H 640 \
+        --W 576 \
+        --H 576 \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "1,5,10"
+        --waits "$WAITS"
 fi
