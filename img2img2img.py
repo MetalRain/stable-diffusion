@@ -4,6 +4,8 @@ import datetime, time
 import random
 import argparse, os
 import PIL
+import cv2
+from skimage import exposure
 import torch
 import numpy as np
 from omegaconf import OmegaConf
@@ -41,6 +43,27 @@ def load_model_from_config(config, ckpt, verbose=False):
     model.eval()
     return model
 
+def setup_color_correction(image):
+    print("Calibrating color correction.")
+    correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
+    return correction_target
+
+
+def apply_color_correction(correction, image):
+    print("Applying color correction.")
+    return Image.fromarray(
+        cv2.cvtColor(
+            exposure.match_histograms(
+                cv2.cvtColor(
+                    np.asarray(image),
+                    cv2.COLOR_RGB2LAB
+                ),
+                correction,
+                channel_axis=2
+            ),
+            cv2.COLOR_LAB2RGB
+        ).astype("uint8")
+    )
 
 def load_img_numpy(path):
     image = Image.open(path).convert("RGB")
@@ -48,22 +71,25 @@ def load_img_numpy(path):
     print(f"loaded input image of size ({w}, {h}) from {path}")
     w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
-    return np.array(image).astype(np.float32) / 255.0
+    color_correction = setup_color_correction(image)
+    return (np.array(image).astype(np.float32) / 255.0, color_correction)
 
 def load_img_torch(numpy_image):
     image = numpy_image[None].transpose(0, 3, 1, 2)
     torch_image = torch.from_numpy(image) 
     return 2.*torch_image - 1.
 
-def save_image(torch_images, sample_path, scale, strength, steps, seed):
+def save_image(torch_images, color_correction, sample_path, scale, strength, steps, seed):
     # Clamp for saving
     torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
     for torch_image in torch_images:
         numpy_image = torch_image.cpu().numpy()
         numpy_image = 255. * rearrange(numpy_image, 'c h w -> h w c')
         img = Image.fromarray(numpy_image.astype(np.uint8))
+        corrected_image = apply_color_correction(color_correction, img)
         img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-        img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png"))
+        img_path = os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png")
+        corrected_image.save(img_path)
 
 
 def main():
@@ -168,6 +194,12 @@ def main():
         help="Save also intermediate images",
         default=False
     )
+    parser.add_argument(
+        "--image_per_loop",
+        action='store_true',
+        help="Run one loop as single image",
+        default=False
+    )
 
     opt = parser.parse_args()
     
@@ -189,7 +221,7 @@ def main():
     c = model.get_learned_conditioning(prompts)
 
     assert os.path.isfile(opt.init_img)
-    init_image_numpy = load_img_numpy(opt.init_img)
+    init_image_numpy, color_correction = load_img_numpy(opt.init_img)
 
     scales = [float(s) for s in opt.scales.split(',')]
     # unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
@@ -245,8 +277,13 @@ def main():
                         t_enc = int(strength * ddim_steps)
                         print(f"target t_enc is {t_enc} steps")
 
+                        if opt.image_per_loop:
+                            # Image get fed back again and again
+                            pass
+                        else:
+                            torch_images = repeat(init_image_torch, '1 ... -> b ...', b=1)
+                        
                         # First stage encoding (latent space)
-                        # Image get fed back again and again
                         current_latent = model.get_first_stage_encoding(model.encode_first_stage(torch_images))
 
                         # Second stage encoding (scaled latent)
@@ -264,9 +301,10 @@ def main():
                         # First stage decoding
                         torch_images = model.decode_first_stage(samples)
 
-                        if opt.save_middle:
+                        if opt.save_middle or not opt.image_per_loop:
                             save_image(
                                 torch_images=torch_images,
+                                color_correction=color_correction,
                                 sample_path=sample_path,
                                 scale=scale,
                                 strength=strength,
@@ -276,9 +314,10 @@ def main():
                         images = images + 1
 
                     # Save result after all scaling options have been added
-                    if not opt.save_middle:
+                    if not opt.save_middle or opt.image_per_loop:
                         save_image(
                             torch_images=torch_images,
+                            color_correction=color_correction,
                             sample_path=sample_path,
                             scale=scale,
                             strength=strength,

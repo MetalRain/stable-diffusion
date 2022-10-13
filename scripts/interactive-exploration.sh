@@ -5,16 +5,18 @@
 # Example:
 # ./scripts/interactive-exploration.sh [FILENAME] square 9
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
+source "$BASE_DIR/scripts/config.sh"
+
 VARY_FILE_NAME="$1"
 ASPECT_RATIO="$2"
 if [[ -z "$ASPECT_RATIO" ]];
 then
-  ASPECT_RATIO="portrait"
+  ASPECT_RATIO="$DEFAULT_ASPECT_RATIO"
 fi
 SCALE="$3"
 if [[ -z "$SCALE" ]];
 then
-  SCALE="7"
+  SCALE="$DEFAULT_SCALE"
 fi
 
 PROMPT_HASH="$(basename "$(dirname "$(realpath $VARY_FILE_NAME)")")"

@@ -5,17 +5,19 @@
 # Example:
 # ./scripts/image.sh "Nice view" portrait 2142523 9
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
+source "$BASE_DIR/scripts/config.sh"
+
 TEXT_PROMPT="$1"
 ASPECT_RATIO="$2"
 if [[ -z "$ASPECT_RATIO" ]];
 then
-  ASPECT_RATIO="portrait"
+  ASPECT_RATIO="$DEFAULT_ASPECT_RATIO"
 fi
 SEED="$3"
 SCALE="$4"
 if [[ -z "$SCALE" ]];
 then
-  SCALE="7"
+  SCALE="$DEFAULT_SCALE"
 fi
 echo "Generating $ASPECT_RATIO for prompt: '$TEXT_PROMPT' with seed $SEED and scale $SCALE"
 PROMPT_HASH=$(bash $BASE_DIR/scripts/init-explore.sh "$TEXT_PROMPT")
@@ -26,8 +28,8 @@ then
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
-        --W 448 \
-        --H 768 \
+        --W "$MIN_RECT_DIM" \
+        --H "$MAX_RECT_DIM" \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi
@@ -37,8 +39,8 @@ then
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
-        --W 768 \
-        --H 448 \
+        --W "$MAX_RECT_DIM" \
+        --H "$MIN_RECT_DIM" \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi
@@ -48,8 +50,8 @@ then
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
-        --W 576 \
-        --H 576 \
+        --W "$MAX_SQUARE_DIM" \
+        --H "$MAX_SQUARE_DIM" \
         --scales "$SCALE" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi

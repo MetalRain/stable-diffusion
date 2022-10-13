@@ -6,18 +6,20 @@
 # Example:
 # ./scripts/interactive.sh "Nice view" portrait 9
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
+source "$BASE_DIR/scripts/config.sh"
+
 mkdir -p  $BASE_DIR/explore/scratch
 
 TEXT_PROMPT="$1"
 ASPECT_RATIO="$2"
 if [[ -z "$ASPECT_RATIO" ]];
 then
-  ASPECT_RATIO="portrait"
+  ASPECT_RATIO="$DEFAULT_ASPECT_RATIO"
 fi
 SCALE="$3"
 if [[ -z "$SCALE" ]];
 then
-  SCALE="6"
+  SCALE="$DEFAULT_SCALE"
 fi
 
 if [[ -z "$TEXT_PROMPT" ]];

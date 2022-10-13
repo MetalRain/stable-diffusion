@@ -5,11 +5,13 @@
 # Example:
 # ./scripts/vary-exploration.sh [FILENAME] high ", natural sunlight"
 BASE_DIR="$(dirname "$(dirname "$(realpath $0)")")"
+source "$BASE_DIR/scripts/config.sh"
+
 VARY_FILE_NAME="$1"
 VARY_AMOUNT="$2"
 if [[ -z "$VARY_AMOUNT" ]];
 then
-  VARY_AMOUNT="normal"
+  VARY_AMOUNT="$DEFAULT_VARIATION_TRANSFORM"
 fi
 PROMPT_ADDITION="$3"
 if [[ -z "$PROMPT_ADDITION" ]];
@@ -19,7 +21,7 @@ fi
 VARY_SAMPLES="$4"
 if [[ -z "$VARY_SAMPLES" ]];
 then
-  VARY_SAMPLES="3"
+  VARY_SAMPLES="$VARIATION_ITERATIONS"
 fi
 
 PROMPT_HASH="$(basename "$(dirname "$(realpath $VARY_FILE_NAME)")")"
@@ -39,5 +41,5 @@ then
     exit 1
 fi
 
-echo "Varying exploration $PROMPT_HASH using $VARY_AMOUNT variation"
+echo "Varying exploration $PROMPT_HASH using $VARY_AMOUNT transformation"
 exec "$BASE_DIR/scripts/vary.sh" "$VARY_FILE_NAME" "$TEXT_PROMPT" "$VARY_AMOUNT" "$VARY_SAMPLES"
