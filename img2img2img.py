@@ -89,7 +89,7 @@ def save_image(torch_images, color_correction, sample_path, scale, strength, ste
         corrected_image = apply_color_correction(color_correction, img)
         img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
         img_path = os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png")
-        corrected_image.save(img_path)
+        corrected_image.convert('RGBA').save(img_path)
 
 
 def main():
