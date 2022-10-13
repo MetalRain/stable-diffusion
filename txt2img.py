@@ -197,12 +197,12 @@ def main():
                             x_T=start_code
                         )
 
-                        x_samples_ddim = model.decode_first_stage(samples_ddim)
-                        x_checked_image_torch = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                        torch_images = model.decode_first_stage(samples_ddim)
+                        torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
 
-                        for x_sample in x_checked_image_torch:
-                            x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                            img = Image.fromarray(x_sample.astype(np.uint8))
+                        for torch_image in torch_images:
+                            numpy_image = 255. * rearrange(torch_image.cpu().numpy(), 'c h w -> h w c')
+                            img = Image.fromarray(numpy_image.astype(np.uint8))
                             img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
                             img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_seed-{seed}.png"))
                         images = images + 1

@@ -17,13 +17,13 @@ fi
 SCALE="$3"
 if [[ -z "$SCALE" ]];
 then
-  SCALE="5"
+  SCALE="6"
 fi
 
 if [[ -z "$TEXT_PROMPT" ]];
 then
     echo "Give prompt for next image:"
-    read prompt
+    read -e prompt
     if [[ "q" == "$prompt" ]];
     then
         echo "Closing off.."

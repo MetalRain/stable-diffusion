@@ -42,16 +42,28 @@ def load_model_from_config(config, ckpt, verbose=False):
     return model
 
 
-def load_img(path):
+def load_img_numpy(path):
     image = Image.open(path).convert("RGB")
     w, h = image.size
     print(f"loaded input image of size ({w}, {h}) from {path}")
     w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
-    image = np.array(image).astype(np.float32) / 255.0
-    image = image[None].transpose(0, 3, 1, 2)
-    image = torch.from_numpy(image)
-    return 2.*image - 1.
+    return np.array(image).astype(np.float32) / 255.0
+
+def load_img_torch(numpy_image):
+    image = numpy_image[None].transpose(0, 3, 1, 2)
+    torch_image = torch.from_numpy(image) 
+    return 2.*torch_image - 1.
+
+def save_image(torch_images, sample_path, scale, strength, steps, seed):
+    # Clamp for saving
+    torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
+    for torch_image in torch_images:
+        numpy_image = torch_image.cpu().numpy()
+        numpy_image = 255. * rearrange(numpy_image, 'c h w -> h w c')
+        img = Image.fromarray(numpy_image.astype(np.uint8))
+        img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+        img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png"))
 
 
 def main():
@@ -177,8 +189,7 @@ def main():
     c = model.get_learned_conditioning(prompts)
 
     assert os.path.isfile(opt.init_img)
-    init_image = load_img(opt.init_img).to(device)
-    init_image = repeat(init_image, '1 ... -> b ...', b=1)
+    init_image_numpy = load_img_numpy(opt.init_img)
 
     scales = [float(s) for s in opt.scales.split(',')]
     # unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))
@@ -208,7 +219,9 @@ def main():
         sampler = DDIMSampler(model)
         sampler.make_schedule(ddim_num_steps=ddim_steps, ddim_eta=opt.ddim_eta, verbose=False)
 
-        current_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
+        # Reload image every loop to avoid mutation
+        init_image_torch = load_img_torch(init_image_numpy).to(device)
+        torch_images = repeat(init_image_torch, '1 ... -> b ...', b=1)
 
         precision_scope = autocast if opt.precision == "autocast" else nullcontext
         with torch.no_grad():
@@ -232,9 +245,14 @@ def main():
                         t_enc = int(strength * ddim_steps)
                         print(f"target t_enc is {t_enc} steps")
 
-                        # encode (scaled latent)
+                        # First stage encoding (latent space)
+                        # Image get fed back again and again
+                        current_latent = model.get_first_stage_encoding(model.encode_first_stage(torch_images))
+
+                        # Second stage encoding (scaled latent)
                         z_enc = sampler.stochastic_encode(current_latent, torch.tensor([t_enc]).to(device))
-                        # decode it
+                        
+                        # Second stage decoding
                         samples = sampler.decode(
                             z_enc,
                             c,
@@ -243,27 +261,30 @@ def main():
                             unconditional_conditioning=uc
                         )
 
-                        x_samples = model.decode_first_stage(samples)
-                        if opt.save_middle:
-                            x_samples_img = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
-                            for x_sample in x_samples_img:
-                                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                                img = Image.fromarray(x_sample.astype(np.uint8))
-                                img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-                                img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_strenght-{strength}_seed-{seed}.png"))
+                        # First stage decoding
+                        torch_images = model.decode_first_stage(samples)
 
-                        # Feed image back to machine
-                        current_latent = model.get_first_stage_encoding(model.encode_first_stage(x_samples))
+                        if opt.save_middle:
+                            save_image(
+                                torch_images=torch_images,
+                                sample_path=sample_path,
+                                scale=scale,
+                                strength=strength,
+                                steps=ddim_steps,
+                                seed=seed
+                            )
                         images = images + 1
 
                     # Save result after all scaling options have been added
                     if not opt.save_middle:
-                        x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
-                        for x_sample in x_samples:
-                            x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                            img = Image.fromarray(x_sample.astype(np.uint8))
-                            img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-                            img.save(os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{ddim_steps}_strenght-{strength}_seed-{seed}.png"))
+                        save_image(
+                            torch_images=torch_images,
+                            sample_path=sample_path,
+                            scale=scale,
+                            strength=strength,
+                            steps=ddim_steps,
+                            seed=seed
+                        )
 
         loops = loops + 1
     print("Done")
