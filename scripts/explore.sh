@@ -27,7 +27,7 @@ if [[ "$ASPECT_RATIO" == "portrait" ]];
 then
     python $BASE_DIR/txt2img.py \
         --prompt "$TEXT_PROMPT" \
-        --n_samples "$MAX_ITERATIONS" \
+        --n_samples "$MAX_EXPLORE_ITERATIONS" \
         --W "$MIN_RECT_DIM" \
         --H "$MAX_RECT_DIM" \
         --scales "$SCALE" \
@@ -38,7 +38,7 @@ if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
     python $BASE_DIR/txt2img.py \
         --prompt "$TEXT_PROMPT" \
-        --n_samples "$MAX_ITERATIONS" \
+        --n_samples "$MAX_EXPLORE_ITERATIONS" \
         --W "$MAX_RECT_DIM" \
         --H "$MIN_RECT_DIM" \
         --scales "$SCALE" \
@@ -49,7 +49,7 @@ if [[ "$ASPECT_RATIO" == "square" ]];
 then
     python $BASE_DIR/txt2img.py \
         --prompt "$TEXT_PROMPT" \
-        --n_samples "$MAX_ITERATIONS" \
+        --n_samples "$MAX_EXPLORE_ITERATIONS" \
         --W "$MAX_SQUARE_DIM" \
         --H "$MAX_SQUARE_DIM" \
         --scales "$SCALE" \

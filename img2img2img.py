@@ -43,26 +43,30 @@ def load_model_from_config(config, ckpt, verbose=False):
     model.eval()
     return model
 
-def setup_color_correction(image):
+def setup_color_correction(numpy_image):
     print("Calibrating color correction.")
-    correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
-    return correction_target
+    return cv2.cvtColor(
+        numpy_image.astype(np.uint8),
+        cv2.COLOR_RGB2LAB
+    )
 
 
-def apply_color_correction(correction, image):
+def apply_color_correction(correction, numpy_image):
     print("Applying color correction.")
+    image_lab = cv2.cvtColor(
+        numpy_image.astype(np.uint8),
+        cv2.COLOR_RGB2LAB
+    )
+    image_corr = exposure.match_histograms(
+        image_lab,
+        correction,
+        channel_axis=2
+    )
     return Image.fromarray(
         cv2.cvtColor(
-            exposure.match_histograms(
-                cv2.cvtColor(
-                    np.asarray(image),
-                    cv2.COLOR_RGB2LAB
-                ),
-                correction,
-                channel_axis=2
-            ),
+            image_corr,
             cv2.COLOR_LAB2RGB
-        ).astype("uint8")
+        ).astype(np.uint8)
     )
 
 def load_img_numpy(path):
@@ -71,25 +75,27 @@ def load_img_numpy(path):
     print(f"loaded input image of size ({w}, {h}) from {path}")
     w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
-    color_correction = setup_color_correction(image)
+    color_correction = setup_color_correction(np.asarray(image))
+    # 0-255 -> 0.0 - 1.0
     return (np.array(image).astype(np.float32) / 255.0, color_correction)
 
 def load_img_torch(numpy_image):
     image = numpy_image[None].transpose(0, 3, 1, 2)
     torch_image = torch.from_numpy(image) 
+    # 0.0 - 1.0 -> -1.0 - 1.0
     return 2.*torch_image - 1.
 
 def save_image(torch_images, color_correction, sample_path, scale, strength, steps, seed):
-    # Clamp for saving
+    # -1.0 - 1.0 -> 0.0 - 1.0
     torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
     for torch_image in torch_images:
         numpy_image = torch_image.cpu().numpy()
+        #  0.0 - 1.0 -> 0 - 255
         numpy_image = 255. * rearrange(numpy_image, 'c h w -> h w c')
-        img = Image.fromarray(numpy_image.astype(np.uint8))
-        corrected_image = apply_color_correction(color_correction, img)
+        corrected_image = apply_color_correction(color_correction, numpy_image)
         img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
         img_path = os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png")
-        corrected_image.convert('RGBA').save(img_path)
+        corrected_image.save(img_path)
 
 
 def main():
