@@ -5,7 +5,6 @@ import random
 import argparse, os
 import PIL
 import cv2
-from skimage import exposure
 import torch
 import numpy as np
 from omegaconf import OmegaConf
@@ -23,6 +22,78 @@ instantiate_from_config = ldm_util.instantiate_from_config
 ddim = import_module("stable-diffusion.ldm.models.diffusion.ddim")
 DDIMSampler = ddim.DDIMSampler
 
+
+# Color correction from skimage
+# https://github.com/scikit-image/scikit-image/blob/v0.19.2/skimage/exposure/histogram_matching.py#L24-L85
+
+def cdf_prep(template):
+    """Prepare template values for cdf calculation"""
+    tmpl_values, tmpl_counts = np.unique(template.ravel(), return_counts=True)
+    # calculate normalized quantiles for each array
+    tmpl_quantiles = np.cumsum(tmpl_counts) / float(template.size)
+    return (tmpl_quantiles, tmpl_values)
+
+def match_cdf(source, ref_quantiles, ref_values, blend_amount=0.5):
+    """
+    Return modified source array so that the cumulative density function of
+    its values matches the cumulative density function of the template.
+    """
+    src_values, src_unique_indices, src_counts = np.unique(
+        source.ravel(),
+        return_inverse=True,
+        return_counts=True
+    )
+
+    # calculate normalized quantiles for each array
+    src_quantiles = np.cumsum(src_counts) / float(source.size)
+
+    # interpolate values for each unique index
+    interp_a_values = np.interp(src_quantiles, ref_quantiles, ref_values)
+    new_values = interp_a_values[src_unique_indices]
+
+    # Blend source and interpolation to avoid too much error
+    inv_blend = 1.0 - blend_amount
+    return (
+        source.ravel() * blend_amount
+        + new_values * inv_blend
+    ).reshape(source.shape)
+
+
+def color_correct_lab_image(lab_image, lab_correction, blend_iterations=4, blend_amount=0.5):
+    """
+    Match color channels of CIELAB color space image to reference image
+    
+    Very similar to:
+    skimage.exposure.match_histograms
+    ---
+    Adjust an image so that its cumulative histogram matches that of another.
+    The adjustment is applied separately for each channel.
+    ---
+    .. [1] http://paulbourke.net/miscellaneous/equalisation/
+    """
+    matched = np.empty(lab_image.shape, dtype=lab_image.dtype)
+    
+    # Skip L channel, it's visually most distinctive
+    matched[..., 0] = lab_image[..., 0]
+
+    # Adjust *a & *b 
+    for channel in range(1, 3):
+        source_channel = lab_image[..., channel]
+        reference_channel = lab_correction[..., channel]
+        # Use same ref for all rounds
+        ref_quantiles, ref_values = cdf_prep(reference_channel)
+        matched_channel = source_channel
+        # Blend several times to soften otherwise hard changes
+        for _ in range(blend_iterations):
+            matched_channel = match_cdf(
+                source=matched_channel,
+                ref_quantiles=ref_quantiles,
+                ref_values=ref_values,
+                blend_amount=blend_amount
+            )
+        matched[..., channel] = matched_channel
+
+    return matched.astype(np.float32, copy=False)
 
 def load_model_from_config(config, ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
@@ -45,29 +116,22 @@ def load_model_from_config(config, ckpt, verbose=False):
 
 def setup_color_correction(numpy_image):
     print("Calibrating color correction.")
-    return cv2.cvtColor(
-        numpy_image.astype(np.uint8),
-        cv2.COLOR_RGB2LAB
-    )
-
+    return cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
 
 def apply_color_correction(correction, numpy_image):
     print("Applying color correction.")
-    image_lab = cv2.cvtColor(
-        numpy_image.astype(np.uint8),
-        cv2.COLOR_RGB2LAB
+    lab_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
+    lab_correction = color_correct_lab_image(
+        lab_image=lab_image,
+        lab_correction=correction,
+        # 100% interpolated result :D
+        blend_iterations=1,
+        blend_amount=0
     )
-    image_corr = exposure.match_histograms(
-        image_lab,
-        correction,
-        channel_axis=2
-    )
-    return Image.fromarray(
-        cv2.cvtColor(
-            image_corr,
-            cv2.COLOR_LAB2RGB
-        ).astype(np.uint8)
-    )
+    image_rgb = cv2.cvtColor(lab_correction, cv2.COLOR_LAB2RGB)
+    #  0.0-1.0 -> 0-255
+    uint8_img = 255. * image_rgb
+    return Image.fromarray(uint8_img.astype(np.uint8))
 
 def load_img_numpy(path):
     image = Image.open(path).convert("RGB")
@@ -75,23 +139,23 @@ def load_img_numpy(path):
     print(f"loaded input image of size ({w}, {h}) from {path}")
     w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
-    color_correction = setup_color_correction(np.asarray(image))
-    # 0-255 -> 0.0 - 1.0
-    return (np.array(image).astype(np.float32) / 255.0, color_correction)
+    # 0-255 -> 0.0-1.0
+    image_numpy = np.asarray(image).astype(np.float32) / 255.0
+    color_correction = setup_color_correction(image_numpy.copy())
+    return (image_numpy, color_correction)
 
 def load_img_torch(numpy_image):
     image = numpy_image[None].transpose(0, 3, 1, 2)
     torch_image = torch.from_numpy(image) 
-    # 0.0 - 1.0 -> -1.0 - 1.0
+    # 0.0-1.0 -> -1.0-1.0
     return 2.*torch_image - 1.
 
 def save_image(torch_images, color_correction, sample_path, scale, strength, steps, seed):
-    # -1.0 - 1.0 -> 0.0 - 1.0
+    # -1.0-1.0 -> 0.0-1.0
     torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
     for torch_image in torch_images:
         numpy_image = torch_image.cpu().numpy()
-        #  0.0 - 1.0 -> 0 - 255
-        numpy_image = 255. * rearrange(numpy_image, 'c h w -> h w c')
+        numpy_image = rearrange(numpy_image, 'c h w -> h w c').astype(np.float32)
         corrected_image = apply_color_correction(color_correction, numpy_image)
         img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
         img_path = os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png")
@@ -307,6 +371,9 @@ def main():
                         # First stage decoding
                         torch_images = model.decode_first_stage(samples)
 
+                        # Clamp after every image to avoid color banding
+                        torch_images = torch.clamp(torch_images, min=-1.0, max=1.0)
+
                         if opt.save_middle or not opt.image_per_loop:
                             save_image(
                                 torch_images=torch_images,
@@ -320,7 +387,7 @@ def main():
                         images = images + 1
 
                     # Save result after all scaling options have been added
-                    if not opt.save_middle or opt.image_per_loop:
+                    if opt.image_per_loop and not opt.save_middle:
                         save_image(
                             torch_images=torch_images,
                             color_correction=color_correction,
