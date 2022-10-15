@@ -26,11 +26,13 @@ DDIMSampler = ddim.DDIMSampler
 # Color correction from skimage
 # https://github.com/scikit-image/scikit-image/blob/v0.19.2/skimage/exposure/histogram_matching.py#L24-L85
 
-def cdf_prep(template):
+def cdf_prep(template, boost=0.0):
     """Prepare template values for cdf calculation"""
     tmpl_values, tmpl_counts = np.unique(template.ravel(), return_counts=True)
     # calculate normalized quantiles for each array
     tmpl_quantiles = np.cumsum(tmpl_counts) / float(template.size)
+    # move quantiles down to match darkening
+    tmpl_quantiles = np.clip(tmpl_quantiles + boost, 0.0, 1.0)
     return (tmpl_quantiles, tmpl_values)
 
 def match_cdf(source, ref_quantiles, ref_values, blend_amount=0.5):
@@ -59,7 +61,7 @@ def match_cdf(source, ref_quantiles, ref_values, blend_amount=0.5):
     ).reshape(source.shape)
 
 
-def color_correct_lab_image(lab_image, lab_correction, blend_iterations=4, blend_amount=0.5):
+def color_correct_lab_image(lab_image, lab_correction):
     """
     Match color channels of CIELAB color space image to reference image
     
@@ -71,25 +73,35 @@ def color_correct_lab_image(lab_image, lab_correction, blend_iterations=4, blend
     ---
     .. [1] http://paulbourke.net/miscellaneous/equalisation/
     """
+    # Blend L channel less times, since it's more susceptible to
+    # make image color band, keep 0.9^2 = 81% of incoming L
+    # In order to combat against darkening, adjust L channel quantiles
+    # Color channels A and B get smoothed over multiple times
+    # only preserving 0.4^4 = 2.6% original color and rest coming from reference
+    # this keeps drift to magenta to minimum whilst allowing colors to change
+    channel_quantile_boost = [-0.08, 0.00, 0.0]
+    channel_blend_iterations = [2, 4, 4]
+    channel_blend_amount=[0.9, 0.4, 0.4]
     matched = np.empty(lab_image.shape, dtype=lab_image.dtype)
     
-    # Skip L channel, it's visually most distinctive
-    matched[..., 0] = lab_image[..., 0]
-
-    # Adjust *a & *b 
-    for channel in range(1, 3):
+    # Adjust channels
+    for channel in range(lab_image.shape[-1]):
         source_channel = lab_image[..., channel]
         reference_channel = lab_correction[..., channel]
         # Use same ref for all rounds
-        ref_quantiles, ref_values = cdf_prep(reference_channel)
+        
+        ref_quantiles, ref_values = cdf_prep(
+            template=reference_channel,
+            boost=channel_quantile_boost[channel]
+        )
         matched_channel = source_channel
         # Blend several times to soften otherwise hard changes
-        for _ in range(blend_iterations):
+        for _ in range(channel_blend_iterations[channel]):
             matched_channel = match_cdf(
                 source=matched_channel,
                 ref_quantiles=ref_quantiles,
                 ref_values=ref_values,
-                blend_amount=blend_amount
+                blend_amount=channel_blend_amount[channel]
             )
         matched[..., channel] = matched_channel
 
@@ -123,10 +135,7 @@ def apply_color_correction(correction, numpy_image):
     lab_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
     lab_correction = color_correct_lab_image(
         lab_image=lab_image,
-        lab_correction=correction,
-        # 100% interpolated result :D
-        blend_iterations=1,
-        blend_amount=0
+        lab_correction=correction
     )
     image_rgb = cv2.cvtColor(lab_correction, cv2.COLOR_LAB2RGB)
     #  0.0-1.0 -> 0-255

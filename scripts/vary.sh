@@ -59,6 +59,18 @@ then
     STRENGHTS="0.3,0.35,0.4,0.45,0.5,0.55"
 fi
 
+if [[ "$VARY_AMOUNT" == "loop-test" ]];
+then
+    SINGLE_PER_LOOP="1"
+    SCALES="8,8,8,8,8,8,8,8,8,8"
+    STRENGHTS="0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3"
+fi
+if [[ "$VARY_AMOUNT" == "snake" ]];
+then
+    SINGLE_PER_LOOP="1"
+    SCALES="6,8,6,8"
+    STRENGHTS="0.35,0.3,0.35,0.3"
+fi
 if [[ "$VARY_AMOUNT" == "beast" ]];
 then
     SINGLE_PER_LOOP="1"

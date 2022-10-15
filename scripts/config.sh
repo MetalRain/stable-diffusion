@@ -16,9 +16,9 @@ export MAX_EXPLORE_ITERATIONS="1000"
 
 # Scripts wait to allow GPU to cool off after images
 # How many seconds to wait after: 1 image, 3 images, 9 images?
-export EXPLORE_WAITS="1,5,10"
+export EXPLORE_WAITS="3,3,3"
 export INTERACTIVE_WAITS="0,0,0"
-export VARIATION_WAITS="1,3,10"
+export VARIATION_WAITS="3,3,3"
 
 # How many images will interactive mode create
 # before returning to prompt?
