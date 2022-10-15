@@ -26,13 +26,11 @@ DDIMSampler = ddim.DDIMSampler
 # Color correction from skimage
 # https://github.com/scikit-image/scikit-image/blob/v0.19.2/skimage/exposure/histogram_matching.py#L24-L85
 
-def cdf_prep(template, boost=0.0):
+def cdf_prep(template):
     """Prepare template values for cdf calculation"""
     tmpl_values, tmpl_counts = np.unique(template.ravel(), return_counts=True)
     # calculate normalized quantiles for each array
     tmpl_quantiles = np.cumsum(tmpl_counts) / float(template.size)
-    # move quantiles down to match darkening
-    tmpl_quantiles = np.clip(tmpl_quantiles + boost, 0.0, 1.0)
     return (tmpl_quantiles, tmpl_values)
 
 def match_cdf(source, ref_quantiles, ref_values, blend_amount=0.5):
@@ -55,10 +53,13 @@ def match_cdf(source, ref_quantiles, ref_values, blend_amount=0.5):
 
     # Blend source and interpolation to avoid too much error
     inv_blend = 1.0 - blend_amount
-    return (
-        source.ravel() * blend_amount
-        + new_values * inv_blend
-    ).reshape(source.shape)
+    if inv_blend < 1.0:
+        return (
+            source.ravel() * blend_amount
+            + new_values * inv_blend
+        ).reshape(source.shape)
+    else:
+        return new_values.reshape(source.shape)
 
 
 def color_correct_lab_image(lab_image, lab_correction):
@@ -73,43 +74,49 @@ def color_correct_lab_image(lab_image, lab_correction):
     ---
     .. [1] http://paulbourke.net/miscellaneous/equalisation/
     """
-    # Blend L channel less times, since it's more susceptible to
-    # make image color band, keep 0.9^2 = 81% of incoming L
-    # In order to combat against darkening, adjust L channel quantiles
-    # Color channels A and B get smoothed over multiple times
-    # only preserving 0.4^4 = 2.6% original color and rest coming from reference
-    # this keeps drift to magenta to minimum whilst allowing colors to change
-    channel_quantile_boost = [-0.08, 0.00, 0.0]
-    channel_blend_iterations = [2, 4, 4]
-    channel_blend_amount=[0.9, 0.4, 0.4]
+    # Keep L channel as is, no color correction
+    # For A and B use color correction
+    channel_blend_iterations = [1, 1, 1]
+    channel_blend_amount=[1.0, 0.0, 0.0]
+    # In order to combat against darkening, boost L +10 every time color corrected
+    channel_value_boost = [10.0, 0.0, 0.0]
+    channel_value_multiplier = [1.0, 1.0, 1.0]
+    
     matched = np.empty(lab_image.shape, dtype=lab_image.dtype)
     
     # Adjust channels
     for channel in range(lab_image.shape[-1]):
         source_channel = lab_image[..., channel]
-        reference_channel = lab_correction[..., channel]
-        # Use same ref for all rounds
         
-        ref_quantiles, ref_values = cdf_prep(
-            template=reference_channel,
-            boost=channel_quantile_boost[channel]
-        )
         matched_channel = source_channel
+        # multiply channel values
+        matched_channel = np.clip(
+            (matched_channel * channel_value_multiplier[channel]) + channel_value_boost[channel],
+            # Clamp CIELAB 0-100 for L and -150-150 for A and B
+            0.0 if channel == 0 else -150.0,
+            100.0 if channel == 0 else 150.0,
+        )
         # Blend several times to soften otherwise hard changes
-        for _ in range(channel_blend_iterations[channel]):
-            matched_channel = match_cdf(
-                source=matched_channel,
-                ref_quantiles=ref_quantiles,
-                ref_values=ref_values,
-                blend_amount=channel_blend_amount[channel]
+        if channel_blend_amount[channel] < 1.0:
+            reference_channel = lab_correction[..., channel]
+            # Use same ref for all rounds
+            ref_quantiles, ref_values = cdf_prep(
+                template=reference_channel
             )
+            for _ in range(channel_blend_iterations[channel]):
+                matched_channel = match_cdf(
+                    source=matched_channel,
+                    ref_quantiles=ref_quantiles,
+                    ref_values=ref_values,
+                    blend_amount=channel_blend_amount[channel]
+                )
         matched[..., channel] = matched_channel
 
     return matched.astype(np.float32, copy=False)
 
 def load_model_from_config(config, ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
-    pl_sd = torch.load(ckpt, map_location="cpu")
+    pl_sd = torch.load(ckpt)
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
     sd = pl_sd["state_dict"]

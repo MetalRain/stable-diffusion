@@ -130,3 +130,25 @@ Script default values are configured from `./scripts/config.sh`.
 
 You can adjust:
 * Image sizes
+* Defaults
+* Wait times
+
+## Image correction
+
+Stable diffusion model seems to skew results towards magenta.
+This is especially unconvinient when you want to repeatedly transform image.
+
+Corrections these scripts do:
+* Convert image to CIELAB
+* Color correct A* and B* channels based on input image histogram
+* Boost L* channel to avoid darkening image
+
+L* channel is not adjusted based on histogram since that causes visible color banding.
+This still doesn't remove all magenta hue, there are some blended blotches of that in output images and also fringing artefacts from color correction.
+
+However in general these have helped a lot.
+
+Things still to do:
+* Resample and smooth color correction target in long sequences (now just input image)
+* color correct after every transform (now just on save)
+* Adjust color correction & boost intensity based on transform parameters

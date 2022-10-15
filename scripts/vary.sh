@@ -61,9 +61,19 @@ fi
 
 if [[ "$VARY_AMOUNT" == "loop-test" ]];
 then
+    # for testing color correction
     SINGLE_PER_LOOP="1"
     SCALES="8,8,8,8,8,8,8,8,8,8"
     STRENGHTS="0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3"
+    SAVE_MIDDLE="1"
+fi
+if [[ "$VARY_AMOUNT" == "loop-test-smooth" ]];
+then
+    # for testing color correction
+    SINGLE_PER_LOOP="1"
+    SCALES="5,5,5,5,5,5,5,5,5,5"
+    STRENGHTS="0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
+    SAVE_MIDDLE="1"
 fi
 if [[ "$VARY_AMOUNT" == "snake" ]];
 then
@@ -108,13 +118,26 @@ then
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
         --waits "$VARIATION_WAITS"
 else
-    python "$BASE_DIR/img2img2img.py" \
-        --init-img "$1" \
-        --prompt "$2" \
-        --n_samples "$VARY_SAMPLES" \
-        --scales "$SCALES" \
-        --strenghts "$STRENGHTS" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "$VARIATION_WAITS" \
-        --image_per_loop
+    if [[ -z "$SAVE_MIDDLE" ]];
+        python "$BASE_DIR/img2img2img.py" \
+            --init-img "$1" \
+            --prompt "$2" \
+            --n_samples "$VARY_SAMPLES" \
+            --scales "$SCALES" \
+            --strenghts "$STRENGHTS" \
+            --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+            --waits "$VARIATION_WAITS" \
+            --image_per_loop
+    else
+        python "$BASE_DIR/img2img2img.py" \
+            --init-img "$1" \
+            --prompt "$2" \
+            --n_samples "$VARY_SAMPLES" \
+            --scales "$SCALES" \
+            --strenghts "$STRENGHTS" \
+            --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+            --waits "$VARIATION_WAITS" \
+            --image_per_loop \
+            --save_middle
+    fi
 fi
