@@ -119,6 +119,7 @@ then
         --waits "$VARIATION_WAITS"
 else
     if [[ -z "$SAVE_MIDDLE" ]];
+    then
         python "$BASE_DIR/img2img2img.py" \
             --init-img "$1" \
             --prompt "$2" \
