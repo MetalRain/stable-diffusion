@@ -62,7 +62,7 @@ def match_cdf(source, ref_quantiles, ref_values, blend_amount=0.5):
         return new_values.reshape(source.shape)
 
 
-def color_correct_lab_image(lab_image, lab_correction):
+def color_correct_lab_image(lab_image, lab_correction, transform_count):
     """
     Match color channels of CIELAB color space image to reference image
     
@@ -77,9 +77,9 @@ def color_correct_lab_image(lab_image, lab_correction):
     # Keep L channel as is, no color correction
     # For A and B use color correction
     channel_blend_iterations = [1, 1, 1]
-    channel_blend_amount=[1.0, 0.0, 0.0]
-    # In order to combat against darkening, boost L +10 every time color corrected
-    channel_value_boost = [10.0, 0.0, 0.0]
+    channel_blend_amount=[1.0, 0.05, 0.05]
+    # In order to combat against darkening, boost L +2 every time color corrected
+    channel_value_boost = [1.0 * transform_count, 0.0, 0.0]
     channel_value_multiplier = [1.0, 1.0, 1.0]
     
     matched = np.empty(lab_image.shape, dtype=lab_image.dtype)
@@ -137,12 +137,13 @@ def setup_color_correction(numpy_image):
     print("Calibrating color correction.")
     return cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
 
-def apply_color_correction(correction, numpy_image):
+def apply_color_correction(correction, numpy_image, transform_count):
     print("Applying color correction.")
     lab_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
     lab_correction = color_correct_lab_image(
         lab_image=lab_image,
-        lab_correction=correction
+        lab_correction=correction,
+        transform_count=transform_count
     )
     image_rgb = cv2.cvtColor(lab_correction, cv2.COLOR_LAB2RGB)
     #  0.0-1.0 -> 0-255
@@ -166,13 +167,13 @@ def load_img_torch(numpy_image):
     # 0.0-1.0 -> -1.0-1.0
     return 2.*torch_image - 1.
 
-def save_image(torch_images, color_correction, sample_path, scale, strength, steps, seed):
+def save_image(torch_images, color_correction, sample_path, scale, strength, steps, seed, transform_count):
     # -1.0-1.0 -> 0.0-1.0
     torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
     for torch_image in torch_images:
         numpy_image = torch_image.cpu().numpy()
         numpy_image = rearrange(numpy_image, 'c h w -> h w c').astype(np.float32)
-        corrected_image = apply_color_correction(color_correction, numpy_image)
+        corrected_image = apply_color_correction(color_correction, numpy_image, transform_count)
         img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
         img_path = os.path.join(sample_path, f"{img_name}_scale-{scale}_steps-{steps}_strenght-{strength}_seed-{seed}.png")
         corrected_image.save(img_path)
@@ -328,6 +329,7 @@ def main():
 
     loops = 0
     images = 0
+    transforms_without_cc = 0
     while loops < max_loops:
         print(f'Loop {loops}')
 
@@ -384,6 +386,8 @@ def main():
                             unconditional_conditioning=uc
                         )
 
+                        transforms_without_cc = transforms_without_cc + 1
+
                         # First stage decoding
                         torch_images = model.decode_first_stage(samples)
 
@@ -398,8 +402,10 @@ def main():
                                 scale=scale,
                                 strength=strength,
                                 steps=ddim_steps,
-                                seed=seed
+                                seed=seed,
+                                transform_count=transforms_without_cc
                             )
+                            transforms_without_cc = 0
                         images = images + 1
 
                     # Save result after all scaling options have been added
@@ -411,8 +417,10 @@ def main():
                             scale=scale,
                             strength=strength,
                             steps=ddim_steps,
-                            seed=seed
+                            seed=seed,
+                            transform_count=transforms_without_cc
                         )
+                        transforms_without_cc = 0
 
         loops = loops + 1
     print("Done")
