@@ -76,8 +76,8 @@ def color_correct_lab_image(lab_image, lab_correction, transform_count):
     """
     # Keep L channel as is, no color correction
     # For A and B use color correction
-    channel_blend_iterations = [1, 1, 1]
-    channel_blend_amount=[1.0, 0.05, 0.05]
+    channel_blend_iterations = [1, 4, 4]
+    channel_blend_amount=[1.0, 0.4, 0.4]
     # In order to combat against darkening, boost L +2 every time color corrected
     channel_value_boost = [1.0 * transform_count, 0.0, 0.0]
     channel_value_multiplier = [1.0, 1.0, 1.0]
