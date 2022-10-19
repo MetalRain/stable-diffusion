@@ -115,6 +115,7 @@ then
         --n_samples "$VARY_SAMPLES" \
         --scales "$SCALES" \
         --strenghts "$STRENGHTS" \
+        --task "img2img" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
         --waits "$VARIATION_WAITS"
 else
@@ -126,6 +127,7 @@ else
             --n_samples "$VARY_SAMPLES" \
             --scales "$SCALES" \
             --strenghts "$STRENGHTS" \
+            --task "img2img" \
             --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
             --waits "$VARIATION_WAITS" \
             --image_per_loop
@@ -136,6 +138,7 @@ else
             --n_samples "$VARY_SAMPLES" \
             --scales "$SCALES" \
             --strenghts "$STRENGHTS" \
+            --task "img2img" \
             --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
             --waits "$VARIATION_WAITS" \
             --image_per_loop \

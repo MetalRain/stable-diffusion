@@ -592,7 +592,7 @@ def main():
     )
     parser.add_argument(
         "--task",
-        help="Which task to run? txt2img or img2img",
+        help="Which task to run? Either 'txt2img' or 'img2img'",
     )
 
     opt = parser.parse_args()
@@ -607,7 +607,7 @@ def main():
         runner = DiffusionRunner(opt.config, opt.ckpt)
         runner.run_task(task)
     else:
-        print('No task, select with --runner')
+        print('No task, select with --task')
 
 if __name__ == "__main__":
     main()
