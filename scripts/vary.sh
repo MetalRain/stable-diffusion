@@ -48,7 +48,7 @@ fi
 if [[ "$VARY_AMOUNT" == "focus" ]];
 then
     SINGLE_PER_LOOP=""
-    SCALES="12,10,8"
+    SCALES="7,8,9"
     STRENGHTS="0.7,0.7,0.7"
 
 fi
@@ -109,7 +109,7 @@ fi
 
 if [[ -z "$SINGLE_PER_LOOP" ]];
 then
-    python "$BASE_DIR/img2img2img.py" \
+    python "$BASE_DIR/diffusion.py" \
         --init-img "$1" \
         --prompt "$2" \
         --n_samples "$VARY_SAMPLES" \
@@ -120,7 +120,7 @@ then
 else
     if [[ -z "$SAVE_MIDDLE" ]];
     then
-        python "$BASE_DIR/img2img2img.py" \
+        python "$BASE_DIR/diffusion.py" \
             --init-img "$1" \
             --prompt "$2" \
             --n_samples "$VARY_SAMPLES" \
@@ -130,7 +130,7 @@ else
             --waits "$VARIATION_WAITS" \
             --image_per_loop
     else
-        python "$BASE_DIR/img2img2img.py" \
+        python "$BASE_DIR/diffusion.py" \
             --init-img "$1" \
             --prompt "$2" \
             --n_samples "$VARY_SAMPLES" \

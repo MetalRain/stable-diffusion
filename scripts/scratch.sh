@@ -24,34 +24,37 @@ echo "Exploring $ASPECT_RATIO images for prompt: '$TEXT_PROMPT' using scale $SCA
 echo "You can find images in $BASE_DIR/explore/scratch"
 if [[ "$ASPECT_RATIO" == "portrait" ]];
 then
-    python "$BASE_DIR/txt2img.py" \
+    python "$BASE_DIR/diffusion.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples "$INTERACTIVE_IMAGES" \
         --W "$MIN_RECT_DIM" \
         --H "$MAX_RECT_DIM" \
         --scales "$SCALE" \
+        --task "txt2img" \
         --outdir "$BASE_DIR/explore/scratch" \
         --waits "$INTERACTIVE_WAITS"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
-    python "$BASE_DIR/txt2img.py" \
+    python "$BASE_DIR/diffusion.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples "$INTERACTIVE_IMAGES" \
         --W "$MAX_RECT_DIM" \
         --H "$MIN_RECT_DIM" \
         --scales "$SCALE" \
+        --task "txt2img" \
         --outdir "$BASE_DIR/explore/scratch" \
         --waits "$INTERACTIVE_WAITS"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
-    python "$BASE_DIR/txt2img.py" \
+    python "$BASE_DIR/diffusion.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples "$INTERACTIVE_IMAGES" \
         --W "$MAX_SQUARE_DIM" \
         --H "$MAX_SQUARE_DIM" \
         --scales "$SCALE" \
+        --task "txt2img" \
         --outdir "$BASE_DIR/explore/scratch" \
         --waits "$INTERACTIVE_WAITS"
 fi

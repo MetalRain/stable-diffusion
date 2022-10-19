@@ -25,34 +25,37 @@ PROMPT_HASH=$(bash $BASE_DIR/scripts/init-explore.sh "$TEXT_PROMPT")
 echo "Images will be in $BASE_DIR/explore/$PROMPT_HASH/"
 if [[ "$ASPECT_RATIO" == "portrait" ]];
 then
-    python $BASE_DIR/txt2img.py \
+    python "$BASE_DIR/diffusion.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples "$MAX_EXPLORE_ITERATIONS" \
         --W "$MIN_RECT_DIM" \
         --H "$MAX_RECT_DIM" \
         --scales "$SCALE" \
+        --task "txt2img" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
         --waits "$EXPLORE_WAITS"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
-    python $BASE_DIR/txt2img.py \
+    python "$BASE_DIR/diffusion.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples "$MAX_EXPLORE_ITERATIONS" \
         --W "$MAX_RECT_DIM" \
         --H "$MIN_RECT_DIM" \
         --scales "$SCALE" \
+        --task "txt2img" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
         --waits "$EXPLORE_WAITS"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
-    python $BASE_DIR/txt2img.py \
+    python "$BASE_DIR/diffusion.py" \
         --prompt "$TEXT_PROMPT" \
         --n_samples "$MAX_EXPLORE_ITERATIONS" \
         --W "$MAX_SQUARE_DIM" \
         --H "$MAX_SQUARE_DIM" \
         --scales "$SCALE" \
+        --task "txt2img" \
         --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
         --waits "$EXPLORE_WAITS"
 fi
