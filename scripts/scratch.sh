@@ -31,6 +31,7 @@ then
         --H "$MAX_RECT_DIM" \
         --scales "$SCALE" \
         --task "txt2img" \
+        --plms "1" \
         --outdir "$BASE_DIR/explore/scratch" \
         --waits "$INTERACTIVE_WAITS"
 fi
@@ -43,6 +44,7 @@ then
         --H "$MIN_RECT_DIM" \
         --scales "$SCALE" \
         --task "txt2img" \
+        --plms "1" \
         --outdir "$BASE_DIR/explore/scratch" \
         --waits "$INTERACTIVE_WAITS"
 fi
@@ -55,6 +57,7 @@ then
         --H "$MAX_SQUARE_DIM" \
         --scales "$SCALE" \
         --task "txt2img" \
+        --plms "1" \
         --outdir "$BASE_DIR/explore/scratch" \
         --waits "$INTERACTIVE_WAITS"
 fi

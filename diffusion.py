@@ -6,6 +6,8 @@ import PIL
 import cv2
 import torch
 import numpy as np
+import gc
+
 from omegaconf import OmegaConf
 from PIL import Image
 from einops import rearrange, repeat
@@ -19,6 +21,10 @@ instantiate_from_config = ldm_util.instantiate_from_config
 # from ldm.models.diffusion.ddim import DDIMSampler
 ddim = import_module("stable-diffusion.ldm.models.diffusion.ddim")
 DDIMSampler = ddim.DDIMSampler
+
+# from ldm.models.diffusion.plms import PLMSSampler
+plms = import_module("stable-diffusion.ldm.models.diffusion.plms")
+PLMSSampler = plms.PLMSSampler
 
 
 # Color correction from skimage
@@ -76,7 +82,7 @@ def color_correct_lab_image(lab_image, lab_correction, transform_count, strength
     # For A and B use color correction
     channel_blend_iterations = [1, 2, 2]
     channel_blend_amount=[1.0, strength, strength]
-    # In order to combat against darkening, boost L +2 every time color corrected
+    # In order to combat against darkening, boost L channel 1.0 for every diffusion round
     channel_value_boost = [1.0 * transform_count, 0.0, 0.0]
     channel_value_multiplier = [1.0, 1.0, 1.0]
     
@@ -135,30 +141,18 @@ def setup_color_correction(numpy_image):
     print("Calibrating color correction.")
     return cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
 
-def apply_color_correction(correction, numpy_image, transform_count, strength):
-    print("Applying color correction.")
-    lab_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
-    lab_correction = color_correct_lab_image(
-        lab_image=lab_image,
-        lab_correction=correction,
-        transform_count=transform_count,
-        strength=strength
-    )
-    image_rgb = cv2.cvtColor(lab_correction, cv2.COLOR_LAB2RGB)
-    #  0.0-1.0 -> 0-255
-    uint8_img = 255. * image_rgb
-    return Image.fromarray(uint8_img.astype(np.uint8))
-
-def load_img_numpy(path):
+def load_img_pil(path):
     image = Image.open(path).convert("RGB")
     w, h = image.size
     print(f"loaded input image of size ({w}, {h}) from {path}")
     w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
-    image = image.resize((w, h), resample=PIL.Image.LANCZOS)
+    return image.resize((w, h), resample=PIL.Image.LANCZOS)
+
+def load_img_numpy(image_pil):
     # 0-255 -> 0.0-1.0
-    image_numpy = np.asarray(image).astype(np.float32) / 255.0
-    color_correction = setup_color_correction(image_numpy.copy())
-    return (image_numpy, color_correction)
+    numpy_image = np.asarray(image_pil).astype(np.float32) / 255.0
+    color_correction = setup_color_correction(numpy_image.copy())
+    return (numpy_image, color_correction)
 
 def load_img_torch(numpy_image):
     image = numpy_image[None].transpose(0, 3, 1, 2)
@@ -167,13 +161,14 @@ def load_img_torch(numpy_image):
     return 2.0 * torch_image - 1.0
 
 class DiffusionRunner:
-    def __init__(self, config_path, checkpoint_path):
+    def __init__(self, config_path, checkpoint_path, plms):
         config = OmegaConf.load(f"{config_path}")
         model = load_model_from_config(config, f"{checkpoint_path}")
 
         # Load model
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.model = model.to(self.device)
+        self.plms = plms
 
     def run_task(self, task):
         uc = self.model.get_learned_conditioning([""])
@@ -188,16 +183,19 @@ class DiffusionRunner:
 
         loops = 0
         images = 0
+        torch_images = None
         while loops < max_loops:
-            print(f'Loop {loops}')
+            print(f'Loop {loops}/{max_loops}')
 
             # Random seed and init sampler
             seed = static_seed or random.randint(0, 1_000_000_000)
             seed_everything(seed)
-            sampler = DDIMSampler(self.model)
+            if self.plms:
+                sampler = PLMSSampler(self.model)
+            else:
+                sampler = DDIMSampler(self.model)
 
             init_values = task.loop_init(self.device, sampler)
-            torch_images = None
 
             precision_scope = autocast
             with torch.no_grad():
@@ -231,19 +229,22 @@ class DiffusionRunner:
                             # Clamp after every image to avoid color banding
                             torch_images = torch.clamp(torch_images, min=-1.0, max=1.0)
 
-                            task.loop_middle(
+                            torch_images = task.loop_middle(
+                                device=self.device,
                                 torch_images=torch_images,
                                 scaling=scaling,
                                 seed=seed
                             )
                             images = images + 1
 
-                        task.loop_end(
+                        torch_images = task.loop_end(
+                            device=self.device,
                             torch_images=torch_images,
                             scaling=scaling,
                             seed=seed
                         )
             loops = loops + 1
+            gc.collect()
 
 class DiffusionTask:
     def loop_init(
@@ -266,17 +267,19 @@ class DiffusionTask:
 
     def loop_middle(
             self,
+            device,
             torch_images,
             scaling,
             seed):
-        pass
+        return torch_images
 
     def loop_end(
             self,
+            device,
             torch_images,
             scaling,
             seed):
-        pass
+        return torch_images
 
 
 class DiffusionImg2ImgTask(DiffusionTask):
@@ -286,8 +289,9 @@ class DiffusionImg2ImgTask(DiffusionTask):
 
         self.prompt = opt.prompt
 
-        assert os.path.isfile(opt.init_img)
-        init_image_numpy, color_correction = load_img_numpy(opt.init_img)
+        assert os.path.isfile(opt.image)
+        self.image_pil = load_img_pil(opt.image)
+        init_image_numpy, color_correction = load_img_numpy(self.image_pil)
         self.original_image = init_image_numpy
         self.color_reference = color_correction
 
@@ -307,9 +311,11 @@ class DiffusionImg2ImgTask(DiffusionTask):
         self.ddim_steps = opt.ddim_steps
         self.image_per_loop = opt.image_per_loop
         self.save_middle = opt.save_middle
+        self.loop_to_loop = opt.loop_to_loop
 
     def loop_init(self, device, sampler):
         sampler.make_schedule(ddim_num_steps=self.ddim_steps, ddim_eta=0.0, verbose=False)
+        
         # Reload image every loop to avoid mutation
         self.original_image_torch = load_img_torch(self.original_image).to(device)
         torch_images = repeat(self.original_image_torch, '1 ... -> b ...', b=1)
@@ -358,51 +364,84 @@ class DiffusionImg2ImgTask(DiffusionTask):
         # First stage decoding
         torch_images = model.decode_first_stage(samples)
 
+        self.transforms_without_cc += 1
+
         return torch_images
 
     def loop_middle(
             self,
+            device,
             torch_images,
             scaling,
             seed):
         # Save after each image or if asked to save in middle
         if self.save_middle or not self.image_per_loop:
-            self.save_image(
+            torch_images = self.save_image(
+                device,
                 torch_images,
                 scaling,
                 seed
             )
-            self.transforms_without_cc = 0
+        return torch_images
 
     def loop_end(
             self,
+            device,
             torch_images,
             scaling,
             seed):
         # Save result after all scaling options have been added
         if self.image_per_loop and not self.save_middle:
-            self.save_image(
+            torch_images = self.save_image(
+                device,
                 torch_images,
                 scaling,
                 seed
             )
-            self.transforms_without_cc = 0
+        return torch_images
 
     def save_image(
             self,
+            device,
             torch_images, 
             scaling,
             seed):
         scale, strength = scaling
         # -1.0-1.0 -> 0.0-1.0
         torch_images = torch.clamp((torch_images + 1.0) / 2.0, min=0.0, max=1.0)
-        for torch_image in torch_images:
-            numpy_image = torch_image.cpu().numpy()
-            numpy_image = rearrange(numpy_image, 'c h w -> h w c').astype(np.float32)
-            corrected_image = apply_color_correction(self.color_reference, numpy_image, self.transforms_without_cc, strength)
-            img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-            img_path = os.path.join(self.sample_path, f"{img_name}_scale-{scale}_steps-{self.ddim_steps}_strenght-{strength}_seed-{seed}.png")
-            corrected_image.save(img_path)
+        torch_image = torch_images[0]
+        numpy_image = torch_image.cpu().numpy()
+        numpy_image = rearrange(numpy_image, 'c h w -> h w c').astype(np.float32)
+
+        print(f"Applying color correction, {self.transforms_without_cc} transforms since last time.")
+        lab_image = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2LAB)
+        lab_correction = color_correct_lab_image(
+            lab_image=lab_image,
+            lab_correction=self.color_reference,
+            transform_count=self.transforms_without_cc,
+            strength=strength
+        )
+        corrected_image_numpy = cv2.cvtColor(lab_correction, cv2.COLOR_LAB2RGB)
+        #  0.0-1.0 -> 0-255
+        corrected_image_pil = Image.fromarray((255. * corrected_image_numpy).astype(np.uint8))
+
+        self.transforms_without_cc = 0
+        img_name = datetime.datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+        img_path = os.path.join(self.sample_path, f"{img_name}_scale-{scale}_steps-{self.ddim_steps}_strenght-{strength}_seed-{seed}.png")
+        corrected_image_pil.save(img_path)
+
+        if self.image_per_loop or self.loop_to_loop:
+            # When reusing results, load color corrected image back to torch
+            torch_image = load_img_torch(corrected_image_numpy).to(device)
+            torch_images = repeat(torch_image, '1 ... -> b ...', b=1)
+
+        if self.loop_to_loop:
+            # When reusing over all loops, update color correction and "original" image
+            print('Updating color correction reference')
+            self.original_image = corrected_image_numpy
+            self.color_reference = setup_color_correction(corrected_image_numpy.copy())
+
+        return torch_images
 
 class DiffusionText2ImgTask:
     def __init__(self, opt):
@@ -425,10 +464,7 @@ class DiffusionText2ImgTask:
         self.max_loops = opt.n_samples
         self.static_seed = int(opt.seed) if opt.seed else None
 
-    def loop_init(
-            self,
-            device,
-            sampler):
+    def loop_init(self, device, sampler):
         start_code = torch.randn([1, self.C, self.H // self.f, self.W // self.f], device=device)
         return start_code
     
@@ -464,6 +500,7 @@ class DiffusionText2ImgTask:
 
     def loop_middle(
             self,
+            device,
             torch_images,
             scaling,
             seed):
@@ -472,13 +509,15 @@ class DiffusionText2ImgTask:
             scaling,
             seed
         )
+        return torch_images
 
     def loop_end(
             self,
+            device,
             torch_images,
             scaling,
             seed):
-        pass
+        return torch_images
 
     def save_image(
             self,
@@ -495,6 +534,62 @@ class DiffusionText2ImgTask:
             img.save(os.path.join(self.sample_path, f"{img_name}_scale-{scale}_steps-{self.ddim_steps}_seed-{seed}.png"))
 
 
+class DiffusionTaskOptions:
+    '''Simple container for diffusion options'''
+    def __init__(
+            self,
+            config,
+            ckpt,
+            prompt,
+            outdir,
+            scales,
+            task,
+            seed='',
+            strenghts='',
+            waits='5,15,30',
+            ddim_steps=50,
+            n_samples=3,
+            image=None,
+            H=None,
+            W=None,
+            save_middle=False,
+            plms=False,
+            image_per_loop=False,
+            loop_to_loop=False):
+        self.ckpt = ckpt
+        self.config = config
+        self.prompt = prompt
+        self.outdir = outdir
+        self.scales = scales
+        
+        self.image = image
+        self.W = W
+        self.H = H
+        self.ddim_steps = ddim_steps
+        self.n_samples = n_samples
+        self.strenghts = strenghts
+        self.waits = waits
+        self.seed = seed
+        self.save_middle = save_middle
+        self.task = task
+        self.plms = plms if task != 'img2img' else False
+        self.image_per_loop = image_per_loop
+        self.loop_to_loop = loop_to_loop
+
+
+def run_worker(task_options):
+    task = None
+    if task_options.task == 'img2img':
+        task = DiffusionImg2ImgTask(task_options)
+    elif task_options.task == 'txt2img':
+        task = DiffusionText2ImgTask(task_options)
+
+    if task:
+        runner = DiffusionRunner(task_options.config, task_options.ckpt, task_options.plms)
+        runner.run_task(task)
+    else:
+        print('No task, select with --task')
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -506,7 +601,7 @@ def main():
         help="the prompt to render"
     )
     parser.add_argument(
-        "--init-img",
+        "--image",
         type=str,
         nargs="?",
         help="path to the input image"
@@ -580,15 +675,23 @@ def main():
     )
     parser.add_argument(
         "--save_middle",
-        action='store_true',
         help="Save also intermediate images",
-        default=False
+        default=""
+    )
+    parser.add_argument(
+        "--plms",
+        help="Use PLMS sampler",
+        default=""
     )
     parser.add_argument(
         "--image_per_loop",
-        action='store_true',
         help="Run one loop as single image",
-        default=False
+        default=""
+    )
+    parser.add_argument(
+        "--loop_to_loop",
+        help="Continue same image from loop to next",
+        default=""
     )
     parser.add_argument(
         "--task",
@@ -596,18 +699,9 @@ def main():
     )
 
     opt = parser.parse_args()
-    
-    task = None
-    if opt.task == 'img2img':
-        task = DiffusionImg2ImgTask(opt)
-    elif opt.task == 'txt2img':
-        task = DiffusionText2ImgTask(opt)
 
-    if task:
-        runner = DiffusionRunner(opt.config, opt.ckpt)
-        runner.run_task(task)
-    else:
-        print('No task, select with --task')
+    task_options = DiffusionTaskOptions(**vars(opt))
+    run_worker(task_options)
 
 if __name__ == "__main__":
     main()

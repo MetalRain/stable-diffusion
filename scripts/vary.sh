@@ -19,6 +19,7 @@ if [[ -z "$VARY_SAMPLES" ]];
 then
   VARY_SAMPLES="$DEFAULT_VARIATION_ITERATIONS"
 fi
+LOOP_TO_LOOP=""
 
 echo "Varying image '$VARY_FILE_NAME' for prompt: '$TEXT_PROMPT' using '$VARY_AMOUNT' transformation"
 PROMPT_HASH=$(bash $BASE_DIR/scripts/init-explore.sh "$TEXT_PROMPT")
@@ -57,6 +58,27 @@ then
     SINGLE_PER_LOOP=""
     SCALES="10,5,9,6,8,7"
     STRENGHTS="0.3,0.35,0.4,0.45,0.5,0.55"
+fi
+
+if [[ "$VARY_AMOUNT" == "video" ]];
+then
+    SCALES="6,8,10"
+    STRENGHTS="0.5,0.4,0.4"
+    VARY_SAMPLES="10"
+    VARIATION_WAITS="0,0,0"
+    LOOP_TO_LOOP="1"
+    SINGLE_PER_LOOP="1"
+    SAVE_MIDDLE="1"
+fi
+if [[ "$VARY_AMOUNT" == "video-shake" ]];
+then
+    SCALES="6,6.5,7"
+    STRENGHTS="0.35,0.4,0.6"
+    VARY_SAMPLES="20"
+    VARIATION_WAITS="0,0,0"
+    LOOP_TO_LOOP="1"
+    SINGLE_PER_LOOP="1"
+    SAVE_MIDDLE="1"
 fi
 
 if [[ "$VARY_AMOUNT" == "loop-test" ]];
@@ -106,42 +128,15 @@ then
     STRENGHTS="0.2,0.2,0.3,0.5,0.2"
 fi
 
-
-if [[ -z "$SINGLE_PER_LOOP" ]];
-then
-    python "$BASE_DIR/diffusion.py" \
-        --init-img "$1" \
-        --prompt "$2" \
-        --n_samples "$VARY_SAMPLES" \
-        --scales "$SCALES" \
-        --strenghts "$STRENGHTS" \
-        --task "img2img" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "$VARIATION_WAITS"
-else
-    if [[ -z "$SAVE_MIDDLE" ]];
-    then
-        python "$BASE_DIR/diffusion.py" \
-            --init-img "$1" \
-            --prompt "$2" \
-            --n_samples "$VARY_SAMPLES" \
-            --scales "$SCALES" \
-            --strenghts "$STRENGHTS" \
-            --task "img2img" \
-            --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-            --waits "$VARIATION_WAITS" \
-            --image_per_loop
-    else
-        python "$BASE_DIR/diffusion.py" \
-            --init-img "$1" \
-            --prompt "$2" \
-            --n_samples "$VARY_SAMPLES" \
-            --scales "$SCALES" \
-            --strenghts "$STRENGHTS" \
-            --task "img2img" \
-            --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-            --waits "$VARIATION_WAITS" \
-            --image_per_loop \
-            --save_middle
-    fi
-fi
+python "$BASE_DIR/diffusion.py" \
+    --image "$1" \
+    --prompt "$2" \
+    --n_samples "$VARY_SAMPLES" \
+    --scales "$SCALES" \
+    --strenghts "$STRENGHTS" \
+    --task "img2img" \
+    --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
+    --waits "$VARIATION_WAITS" \
+    --loop_to_loop "$LOOP_TO_LOOP" \
+    --image_per_loop "$SINGLE_PER_LOOP" \
+    --save_middle "$SAVE_MIDDLE"
