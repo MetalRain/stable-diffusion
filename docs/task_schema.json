@@ -1,0 +1,27 @@
+{
+    "id": "task-uuid",
+    "input_image_id": "image-uuid",
+    "output_folder": "/explore/outputs",
+    "prompt": "nice view",
+    "seed": "25236234",
+    "model": "sd-v1-4.ckpt",
+    "sampler": "ddim",
+    "iterations": 3,
+    "merge_loops": false,
+    "merge_steps": false,
+    "save_intermediates": false,
+    "program": [
+        {
+            "scale": 6,
+            "strength": 0.3
+        },
+        {
+            "scale": 6,
+            "strength": 0.3
+        },
+        {
+            "scale": 6,
+            "strength": 0.3
+        }
+    ]
+}

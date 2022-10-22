@@ -1,0 +1,11 @@
+{
+    "id": "image-uuid",
+    "parent_image_id": null,
+    "task_id": null,
+    "width": 576,
+    "height": 576,
+    "filepath": "/explore/outputs/task.png",
+    "seed": "25236234",
+    "scale": 6,
+    "strength": null
+}
