@@ -128,7 +128,7 @@ then
     STRENGHTS="0.2,0.2,0.3,0.5,0.2"
 fi
 
-python "$BASE_DIR/diffusion.py" \
+python "$BASE_DIR/main.py" \
     --image "$1" \
     --prompt "$2" \
     --n_samples "$VARY_SAMPLES" \

@@ -24,7 +24,7 @@ PROMPT_HASH=$(bash $BASE_DIR/scripts/init-explore.sh "$TEXT_PROMPT")
 echo "Image will be in $BASE_DIR/explore/$PROMPT_HASH/"
 if [[ "$ASPECT_RATIO" == "portrait" ]];
 then
-    python "$BASE_DIR/txt2img.py" \
+    python "$BASE_DIR/main.py" \
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
@@ -35,7 +35,7 @@ then
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
-    python "$BASE_DIR/txt2img.py" \
+    python "$BASE_DIR/main.py" \
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
@@ -46,7 +46,7 @@ then
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
-    python "$BASE_DIR/txt2img.py" \
+    python "$BASE_DIR/main.py" \
         --prompt "$TEXT_PROMPT" \
         --seed "$SEED" \
         --n_samples 1 \
