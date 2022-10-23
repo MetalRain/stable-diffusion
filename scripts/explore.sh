@@ -33,8 +33,7 @@ then
         --scales "$SCALE" \
         --task "txt2img" \
         --plms "1" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "$EXPLORE_WAITS"
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
@@ -46,8 +45,7 @@ then
         --scales "$SCALE" \
         --task "txt2img" \
         --plms "1" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "$EXPLORE_WAITS"
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
@@ -59,6 +57,5 @@ then
         --scales "$SCALE" \
         --task "txt2img" \
         --plms "1" \
-        --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-        --waits "$EXPLORE_WAITS"
+        --outdir "$BASE_DIR/explore/$PROMPT_HASH"
 fi

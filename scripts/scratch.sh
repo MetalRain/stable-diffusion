@@ -32,8 +32,7 @@ then
         --scales "$SCALE" \
         --task "txt2img" \
         --plms "1" \
-        --outdir "$BASE_DIR/explore/scratch" \
-        --waits "$INTERACTIVE_WAITS"
+        --outdir "$BASE_DIR/explore/scratch"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
@@ -45,8 +44,7 @@ then
         --scales "$SCALE" \
         --task "txt2img" \
         --plms "1" \
-        --outdir "$BASE_DIR/explore/scratch" \
-        --waits "$INTERACTIVE_WAITS"
+        --outdir "$BASE_DIR/explore/scratch"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
@@ -58,6 +56,5 @@ then
         --scales "$SCALE" \
         --task "txt2img" \
         --plms "1" \
-        --outdir "$BASE_DIR/explore/scratch" \
-        --waits "$INTERACTIVE_WAITS"
+        --outdir "$BASE_DIR/explore/scratch"
 fi

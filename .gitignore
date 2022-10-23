@@ -4,3 +4,4 @@ sd-v1-4.ckpt
 __pycache__
 *.pyc
 *.pyi
+task_db

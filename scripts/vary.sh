@@ -65,7 +65,6 @@ then
     SCALES="6,8,10"
     STRENGHTS="0.5,0.4,0.4"
     VARY_SAMPLES="10"
-    VARIATION_WAITS="0,0,0"
     LOOP_TO_LOOP="1"
     SINGLE_PER_LOOP="1"
     SAVE_MIDDLE="1"
@@ -75,7 +74,6 @@ then
     SCALES="6,6.5,7"
     STRENGHTS="0.35,0.4,0.6"
     VARY_SAMPLES="20"
-    VARIATION_WAITS="0,0,0"
     LOOP_TO_LOOP="1"
     SINGLE_PER_LOOP="1"
     SAVE_MIDDLE="1"
@@ -136,7 +134,6 @@ python "$BASE_DIR/main.py" \
     --strenghts "$STRENGHTS" \
     --task "img2img" \
     --outdir "$BASE_DIR/explore/$PROMPT_HASH" \
-    --waits "$VARIATION_WAITS" \
     --loop_to_loop "$LOOP_TO_LOOP" \
     --image_per_loop "$SINGLE_PER_LOOP" \
     --save_middle "$SAVE_MIDDLE"

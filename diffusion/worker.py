@@ -154,20 +154,20 @@ def load_img_torch(numpy_image):
     return 2.0 * torch_image - 1.0
 
 class DiffusionRunner:
-    def __init__(self, config_path, checkpoint_path, plms):
+    def __init__(self, config_path, checkpoint_path, waits):
         config = OmegaConf.load(f"{config_path}")
         model = load_model_from_config(config, f"{checkpoint_path}")
 
         # Load model
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.model = model.to(self.device)
-        self.plms = plms
+        self.waits = [int(s) for s in waits.split(',')]
 
     def run_task(self, task):
         uc = self.model.get_learned_conditioning([""])
         c = self.model.get_learned_conditioning([task.prompt])
 
-        wait_single, wait_three, wait_nine = task.waits
+        wait_single, wait_three, wait_nine = self.waits
 
         static_seed = task.static_seed
         max_loops = task.max_loops
@@ -183,7 +183,7 @@ class DiffusionRunner:
             # Random seed and init sampler
             seed = static_seed or random.randint(0, 1_000_000_000)
             seed_everything(seed)
-            if self.plms:
+            if task.plms:
                 sampler = PLMSSampler(self.model)
             else:
                 sampler = DDIMSampler(self.model)
@@ -294,9 +294,6 @@ class DiffusionImg2ImgTask(DiffusionTask):
         strenghts = [float(s) for s in strenghts_str.split(',')]
         # strength for noising/unnoising. 1.0 corresponds to full destruction of information in init image"
         self.scaling_options = list(zip(scales, strenghts))
-
-        self.waits = [int(s) for s in opt.waits.split(',')]
-
         self.transforms_without_cc = 0
         
         self.max_loops = opt.n_samples
@@ -305,6 +302,7 @@ class DiffusionImg2ImgTask(DiffusionTask):
         self.image_per_loop = opt.image_per_loop
         self.save_middle = opt.save_middle
         self.loop_to_loop = opt.loop_to_loop
+        self.plms = False
 
     def loop_init(self, device, sampler):
         sampler.make_schedule(ddim_num_steps=self.ddim_steps, ddim_eta=0.0, verbose=False)
@@ -448,11 +446,11 @@ class DiffusionText2ImgTask:
 
         self.scaling_options = list(scales)
 
-        self.waits = [int(s) for s in opt.waits.split(',')]
         self.C = 4
         self.f = 8
         self.W = opt.W
         self.H = opt.H
+        self.plms = opt.plms
         
         self.max_loops = opt.n_samples
         self.static_seed = int(opt.seed) if opt.seed else None
@@ -531,15 +529,12 @@ class DiffusionTaskOptions:
     '''Simple container for diffusion options'''
     def __init__(
             self,
-            config,
-            ckpt,
             prompt,
             outdir,
             scales,
             task,
             seed='',
             strenghts='',
-            waits='5,15,30',
             ddim_steps=50,
             n_samples=3,
             image=None,
@@ -548,9 +543,11 @@ class DiffusionTaskOptions:
             save_middle=False,
             plms=False,
             image_per_loop=False,
-            loop_to_loop=False):
-        self.ckpt = ckpt
-        self.config = config
+            loop_to_loop=False,
+            task_id=None,
+            image_id=None):
+        self.ckpt = 'sd-v1-4.ckpt'
+        self.config = 'stable-diffusion/configs/stable-diffusion/v1-inference.yaml'
         self.prompt = prompt
         self.outdir = outdir
         self.scales = scales
@@ -561,24 +558,11 @@ class DiffusionTaskOptions:
         self.ddim_steps = ddim_steps
         self.n_samples = n_samples
         self.strenghts = strenghts
-        self.waits = waits
         self.seed = seed
         self.save_middle = save_middle
         self.task = task
         self.plms = plms if task != 'img2img' else False
         self.image_per_loop = image_per_loop
         self.loop_to_loop = loop_to_loop
-
-
-def run_worker(task_options):
-    task = None
-    if task_options.task == 'img2img':
-        task = DiffusionImg2ImgTask(task_options)
-    elif task_options.task == 'txt2img':
-        task = DiffusionText2ImgTask(task_options)
-
-    if task:
-        runner = DiffusionRunner(task_options.config, task_options.ckpt, task_options.plms)
-        runner.run_task(task)
-    else:
-        print('No task, select with --task')
+        self.task_id = task_id
+        self.image_id = image_id

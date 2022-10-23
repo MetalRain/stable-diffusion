@@ -1,6 +1,7 @@
 import argparse
 
-from diffusion.worker import run_worker, DiffusionTaskOptions
+from diffusion.worker import DiffusionTaskOptions
+from diffusion.db import save_task
 
 def main():
     parser = argparse.ArgumentParser()
@@ -62,24 +63,6 @@ def main():
         help="Comma separated list of strenghts to use",
     )
     parser.add_argument(
-        "--waits",
-        type=str,
-        default="5,15,30",
-        help="Wait times in seconds: after single image, after three images, after 9 images",
-    )
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="stable-diffusion/configs/stable-diffusion/v1-inference.yaml",
-        help="path to config which constructs model",
-    )
-    parser.add_argument(
-        "--ckpt",
-        type=str,
-        default="sd-v1-4.ckpt",
-        help="path to checkpoint of model",
-    )
-    parser.add_argument(
         "--seed",
         type=str,
         default="",
@@ -112,8 +95,11 @@ def main():
 
     opt = parser.parse_args()
 
-    task_options = DiffusionTaskOptions(**vars(opt))
-    run_worker(task_options)
+    print('Running as control')
+    print('Sending task to worker')
+    args_dict=vars(opt)
+    task_options = DiffusionTaskOptions(**args_dict)
+    save_task(task_options)
 
 if __name__ == "__main__":
     main()
