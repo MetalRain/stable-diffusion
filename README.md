@@ -36,6 +36,24 @@ You should have `sd-v1-4.ckpt` file at root of this folder.
 
 ## Usage
 
+System has two parts:
+* worker process
+* control process
+
+and requests between them are communicated using shared SQLite database `task_db`.
+
+Worker process must be first started to start issueing requests:
+```sh
+python worker.py
+```
+Worker will keep stable diffusion model in memory so that subsequent requests
+will be faster to fulfill.
+
+Control process processes arguments and saves them to `task_db` making it possible to queue
+lots of work to be done for worker. 
+
+Eventually control process can also cancel work, but not yet.
+
 ### Explore prompts images
 Start from interactive CLI tool
 ```sh
@@ -149,6 +167,15 @@ This still doesn't remove all magenta hue, there are some blended blotches of th
 However in general these have helped a lot.
 
 Things still to do:
-* Resample and smooth color correction target in long sequences (now just input image)
-* color correct after every transform (now just on save)
 * Adjust color correction & boost intensity based on transform parameters
+* Include VAE to make color correcting better
+
+
+## TODO:
+
+Near term:
+- task scheduler: allow interlacing long and short tasks
+- task control: allow cancelling tasks, reordering tasks
+
+Far term:
+- UI for viewing images and issuing tasks

@@ -83,7 +83,7 @@ def color_correct_lab_image(lab_image, lab_correction, transform_count, strength
     channel_blend_iterations = [1, 2, 2]
     channel_blend_amount=[1.0, strength, strength]
     # In order to combat against darkening, boost L channel 1.0 for every diffusion round
-    channel_value_boost = [1.0 * transform_count, 0.0, 0.0]
+    channel_value_boost = [0.8 * transform_count, 0.0, 0.0]
     channel_value_multiplier = [1.0, 1.0, 1.0]
     
     matched = np.empty(lab_image.shape, dtype=lab_image.dtype)
