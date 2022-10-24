@@ -1,7 +1,7 @@
 import argparse
 
 from diffusion.worker import DiffusionTaskOptions
-from diffusion.db import save_task
+from diffusion.scheduler import schedule_task
 
 def main():
     parser = argparse.ArgumentParser()
@@ -99,7 +99,7 @@ def main():
     print('Sending task to worker')
     args_dict=vars(opt)
     task_options = DiffusionTaskOptions(**args_dict)
-    save_task(task_options)
+    schedule_task(task_options)
 
 if __name__ == "__main__":
     main()

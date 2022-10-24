@@ -1,4 +1,3 @@
-from email.mime import image
 import sqlite3
 import uuid
 from datetime import datetime
@@ -33,8 +32,14 @@ def ensure_tables():
         );
         ''')
         db.execute('''
+        CREATE TABLE task_groups (
+            id VARCHAR(36)
+        );
+        ''')
+        db.execute('''
         CREATE TABLE tasks (
             id VARCHAR(36),
+            task_group_id VARCHAR(36),
             input_image_id VARCHAR(36),
             width INTEGER,
             height INTEGER,
@@ -55,6 +60,24 @@ def ensure_tables():
     except sqlite3.OperationalError as exc:
         print(exc)
     return db
+
+def create_task_group():
+    db = connect()
+    try:
+        # create
+        row = dict(
+            id=str(uuid.uuid4()),
+        )
+        print('Task group', row)
+        db.execute(
+            'INSERT INTO task_groups (id) VALUES (?);',
+            list(row.values())
+        )
+        db.commit()
+        return row
+    except sqlite3.OperationalError as exc:
+        print(exc)
+    return None
 
 def ensure_prompt(prompt_text):
     db = connect()
@@ -130,7 +153,7 @@ def ensure_image(filepath, width, height, task_id):
         print(exc)
     return None
 
-def save_task(task_options):
+def save_task(task_options, task_group_id=None):
     db = ensure_tables()
     task_id=str(uuid.uuid4())
     db_prompt = ensure_prompt(task_options.prompt)
@@ -138,10 +161,15 @@ def save_task(task_options):
     if task_options.image:
         db_image = ensure_image(task_options.image, task_options.W, task_options.H, task_id)
 
+    if task_group_id is None:
+        db_task_group = create_task_group()
+        task_group_id = db_task_group['id']
+
     scale_values = task_options.scales.split(',')
     strenght_values = task_options.strenghts.split(',') or len(scale_values) * [1.0]
     row = dict(
         id=task_id,
+        task_group_id=task_group_id,
         input_image_id=db_image['id'] if db_image else None,
         width=db_image['width'] if db_image else task_options.W,
         height=db_image['height'] if db_image else task_options.H,
@@ -165,11 +193,11 @@ def save_task(task_options):
     try:
         query = '''
         INSERT INTO tasks
-            (id, input_image_id, width, height, output_folder, prompt_id,
+            (id, task_group_id, input_image_id, width, height, output_folder, prompt_id,
             seed, sampler, sampler_steps, iterations,
             merge_loops, merge_steps, save_intermediates,
             program, completed_at)
-        VALUES (?, ?, ?, ?, ?, ?,
+        VALUES (?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?,
             ?, ?, ?,
             ?, ?);
@@ -179,7 +207,7 @@ def save_task(task_options):
             list(row.values())
         )
         db.commit()
-        return task_id
+        return row
     except sqlite3.OperationalError as exc:
         print(exc)
     return None
@@ -190,13 +218,18 @@ def fetch_task():
     db = ensure_tables()
     try:
         query = '''
-        SELECT id, input_image_id, width, height, output_folder, prompt_id,
+        SELECT id, task_group_id, input_image_id, width, height, output_folder, prompt_id,
             seed, sampler, sampler_steps, iterations,
             merge_loops, merge_steps, save_intermediates,
             program, completed_at
         FROM tasks
-        WHERE completed_at IS NULL
-        ORDER BY id asc
+        WHERE id IN (
+            SELECT id
+            FROM tasks
+            WHERE completed_at IS NULL
+            ORDER BY RANDOM()
+            LIMIT 10
+        )
         '''
         res = db.execute(query)
         task_row = res.fetchone()

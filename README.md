@@ -178,4 +178,5 @@ Near term:
 - task control: allow cancelling tasks, reordering tasks
 
 Far term:
+- prompt storybook, make images from prompts, change prompts to continue chain
 - UI for viewing images and issuing tasks

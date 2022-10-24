@@ -12,7 +12,7 @@ export MIN_RECT_DIM="448"
 export MAX_SQUARE_DIM="576"
 
 # How many iterations of exploration to do
-export MAX_EXPLORE_ITERATIONS="1000"
+export MAX_EXPLORE_ITERATIONS="25"
 
 # Scripts wait to allow GPU to cool off after images
 # How many seconds to wait after: 1 image, 3 images, 9 images?
@@ -20,7 +20,7 @@ export WORKER_WAITS="1,2,4"
 
 # How many images will interactive mode create
 # before returning to prompt?
-export INTERACTIVE_IMAGES="3"
+export INTERACTIVE_IMAGES="5"
 
 # How many iterations will variations run 
 export DEFAULT_VARIATION_ITERATIONS="3"

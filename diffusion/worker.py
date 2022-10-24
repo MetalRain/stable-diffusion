@@ -545,6 +545,7 @@ class DiffusionTaskOptions:
             image_per_loop=False,
             loop_to_loop=False,
             task_id=None,
+            task_group_id=None,
             image_id=None):
         self.ckpt = 'sd-v1-4.ckpt'
         self.config = 'stable-diffusion/configs/stable-diffusion/v1-inference.yaml'
@@ -565,4 +566,5 @@ class DiffusionTaskOptions:
         self.image_per_loop = image_per_loop
         self.loop_to_loop = loop_to_loop
         self.task_id = task_id
+        self.task_group_id = task_group_id
         self.image_id = image_id

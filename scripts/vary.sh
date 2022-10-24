@@ -57,6 +57,7 @@ if [[ "$VARY_AMOUNT" == "shake" ]];
 then
     SINGLE_PER_LOOP=""
     SCALES="10,5,9,6,8,7"
+    VARY_SAMPLES="2"
     STRENGHTS="0.3,0.35,0.4,0.45,0.5,0.55"
 fi
 
