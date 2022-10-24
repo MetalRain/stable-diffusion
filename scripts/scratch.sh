@@ -22,39 +22,36 @@ fi
 
 echo "Exploring $ASPECT_RATIO images for prompt: '$TEXT_PROMPT' using scale $SCALE"
 echo "You can find images in $BASE_DIR/explore/scratch"
+
+IMAGE_W="$MIN_RECT_DIM"
+IMAGE_H="$MAX_RECT_DIM"
 if [[ "$ASPECT_RATIO" == "portrait" ]];
 then
-    python "$BASE_DIR/main.py" \
-        --prompt "$TEXT_PROMPT" \
-        --n_samples "$INTERACTIVE_IMAGES" \
-        --W "$MIN_RECT_DIM" \
-        --H "$MAX_RECT_DIM" \
-        --scales "$SCALE" \
-        --task "txt2img" \
-        --plms "1" \
-        --outdir "$BASE_DIR/explore/scratch"
+  IMAGE_W="$MIN_RECT_DIM"
+  IMAGE_H="$MAX_RECT_DIM"
 fi
 if [[ "$ASPECT_RATIO" == "landscape" ]];
 then
-    python "$BASE_DIR/main.py" \
-        --prompt "$TEXT_PROMPT" \
-        --n_samples "$INTERACTIVE_IMAGES" \
-        --W "$MAX_RECT_DIM" \
-        --H "$MIN_RECT_DIM" \
-        --scales "$SCALE" \
-        --task "txt2img" \
-        --plms "1" \
-        --outdir "$BASE_DIR/explore/scratch"
+  IMAGE_W="$MAX_RECT_DIM"
+  IMAGE_H="$MIN_RECT_DIM"
 fi
 if [[ "$ASPECT_RATIO" == "square" ]];
 then
-    python "$BASE_DIR/main.py" \
-        --prompt "$TEXT_PROMPT" \
-        --n_samples "$INTERACTIVE_IMAGES" \
-        --W "$MAX_SQUARE_DIM" \
-        --H "$MAX_SQUARE_DIM" \
-        --scales "$SCALE" \
-        --task "txt2img" \
-        --plms "1" \
-        --outdir "$BASE_DIR/explore/scratch"
+  IMAGE_W="$MAX_SQUARE_DIM"
+  IMAGE_H="$MAX_SQUARE_DIM"
 fi
+if [[ "$ASPECT_RATIO" == "optimal" ]];
+then
+  IMAGE_W="512"
+  IMAGE_H="512"
+fi
+
+python "$BASE_DIR/main.py" \
+    --prompt "$TEXT_PROMPT" \
+    --n_samples "$INTERACTIVE_IMAGES" \
+    --W "$IMAGE_W" \
+    --H "$IMAGE_H" \
+    --scales "$SCALE" \
+    --task "txt2img" \
+    --plms "1" \
+    --outdir "$BASE_DIR/explore/scratch"

@@ -36,7 +36,7 @@ def main():
                 runner.run_task(task)
                 complete_task(task_options)
                 print(f'Task {task_options.task_id} done!')
-        time.sleep(1)
+        time.sleep(3)
 
 if __name__ == "__main__":
     main()

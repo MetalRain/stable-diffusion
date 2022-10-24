@@ -227,9 +227,17 @@ def fetch_task():
             SELECT id
             FROM tasks
             WHERE completed_at IS NULL
+            AND task_group_id IN (
+                SELECT DISTINCT(task_group_id) as task_group_id
+                FROM tasks
+                WHERE completed_at IS NULL
+                ORDER BY RANDOM()
+                LIMIT 10
+            )
             ORDER BY RANDOM()
             LIMIT 10
         )
+        LIMIT 1
         '''
         res = db.execute(query)
         task_row = res.fetchone()
