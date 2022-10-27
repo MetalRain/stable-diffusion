@@ -1,6 +1,6 @@
 from diffusion.db import save_task
 
-def schedule_task(task_options, target_size=3):
+def schedule_task(task_options, target_size=6):
     '''Split long tasks into size of target_size'''
     if task_options.loop_to_loop:
         # if task wants to reuse image from loop to loop
