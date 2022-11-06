@@ -470,7 +470,7 @@ class DiffusionText2ImgTask:
             unconditional_conditioning,
             scaling):
         scale = scaling
-        self.ddim_steps = 10 + int(scale * 5)
+        self.ddim_steps = 20 + int(scale * 7)
 
         shape = [self.C, self.H // self.f, self.W // self.f]
         start_code = init_values

@@ -37,42 +37,48 @@ fi
 
 while [[ ! -z "$prompt" ]];
 do 
-    bash "$BASE_DIR/scripts/scratch.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
+    echo "---"
     echo "Current prompt: '$prompt'"
+    echo "Aspect ratio: $ASPECT_RATIO, scale: $SCALE"
+    echo "---"
     echo "How do you want to proceed?, here are our options:"
-    printf "Sample new images with same prompt [enter], Edit prompt [e]\nAdjust scale [c], Change aspect ratio [a]\nSave & explore further [s], Quit [q]\n"
-    read -e new_prompt
-    if [[ ! -z "$new_prompt" ]];
+    echo "Generate new images [g], Edit prompt [e]"
+    echo "Adjust scale [c], Change aspect ratio [a]"
+    echo "Save & explore further [s], Quit [q]"
+    read -e command_prompt
+    if [[ ! -z "$command_prompt" ]];
     then
-        if [[ "e" == "$new_prompt" ]];
+        if [[ "e" == "$command_prompt" ]];
         then
             echo "Edit prompt:"
-            read -e -i "$prompt" new_prompt
+            read -e -i "$prompt" prompt
         fi
-        if [[ "c" == "$new_prompt" ]];
+        if [[ "g" == "$command_prompt" ]];
+        then
+            echo "Generating new images.."
+            bash "$BASE_DIR/scripts/scratch.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
+        fi
+        if [[ "c" == "$command_prompt" ]];
         then
             echo "Give new scale, numeric value between 1-30, use . as decimal separator:"
             read -e SCALE
-            new_prompt="$prompt"
         fi
-        if [[ "a" == "$new_prompt" ]];
+        if [[ "a" == "$command_prompt" ]];
         then
             echo "Give new aspect ratio, either square, portrait or landscape:"
             read -e ASPECT_RATIO
-            new_prompt="$prompt"
         fi
-        if [[ "q" == "$new_prompt" ]];
+        if [[ "q" == "$command_prompt" ]];
         then
             echo "Closing off.."
             break;
         fi
-        if [[ "s" == "$new_prompt" ]];
+        if [[ "s" == "$command_prompt" ]];
         then
             echo "Saving prompt.."
             PROMPT_HASH="$(bash $BASE_DIR/scripts/init-explore.sh "$prompt")"
             echo "Prompt saved, starting exploration.."
-            exec "$BASE_DIR/scripts/explore.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
+            bash "$BASE_DIR/scripts/explore.sh" "$prompt" "$ASPECT_RATIO" "$SCALE"
         fi
-        prompt="$new_prompt"
     fi
 done

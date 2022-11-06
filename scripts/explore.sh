@@ -54,5 +54,4 @@ python "$BASE_DIR/main.py" \
     --H "$IMAGE_H" \
     --scales "$SCALE" \
     --task "txt2img" \
-    --plms "1" \
     --outdir "$BASE_DIR/explore/$PROMPT_HASH"
