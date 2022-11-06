@@ -51,7 +51,9 @@ do
         if [[ "e" == "$command_prompt" ]];
         then
             echo "Edit prompt:"
-            read -e -i "$prompt" prompt
+            new_prompt=""
+            read -e -i "$prompt" new_prompt
+            prompt="$new_prompt"
         fi
         if [[ "g" == "$command_prompt" ]];
         then

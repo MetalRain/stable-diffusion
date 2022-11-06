@@ -178,7 +178,7 @@ class DiffusionRunner:
         images = 0
         torch_images = None
         while loops < max_loops:
-            print(f'Loop {loops}/{max_loops}')
+            print(f'Loop {loops + 1}/{max_loops}')
 
             # Random seed and init sampler
             seed = static_seed or random.randint(0, 1_000_000_000)

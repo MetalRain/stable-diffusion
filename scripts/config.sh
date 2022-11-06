@@ -20,7 +20,7 @@ export WORKER_WAITS="1,2,4"
 
 # How many images will interactive mode create
 # before returning to prompt?
-export INTERACTIVE_IMAGES="5"
+export INTERACTIVE_IMAGES="3"
 
 # How many iterations will variations run 
 export DEFAULT_VARIATION_ITERATIONS="3"
