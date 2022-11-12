@@ -12,7 +12,7 @@ export MIN_RECT_DIM="448"
 export MAX_SQUARE_DIM="576"
 
 # How many iterations of exploration to do
-export MAX_EXPLORE_ITERATIONS="25"
+export MAX_EXPLORE_ITERATIONS="12"
 
 # Scripts wait to allow GPU to cool off after images
 # How many seconds to wait after: 1 image, 3 images, 9 images?

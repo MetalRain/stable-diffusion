@@ -164,8 +164,13 @@ class DiffusionRunner:
         self.waits = [int(s) for s in waits.split(',')]
 
     def run_task(self, task):
-        uc = self.model.get_learned_conditioning([""])
-        c = self.model.get_learned_conditioning([task.prompt])
+        parts = task.prompt.split('|')
+        if len(parts) == 1:
+            parts.append("")
+        positive, negative = parts[:2]
+
+        c = self.model.get_learned_conditioning([positive])
+        uc = self.model.get_learned_conditioning([negative])
 
         wait_single, wait_three, wait_nine = self.waits
 
