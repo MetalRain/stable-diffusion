@@ -76,7 +76,7 @@ def main():
     parser.add_argument(
         "--plms",
         help="Use PLMS sampler",
-        default=""
+        default="1"
     )
     parser.add_argument(
         "--image_per_loop",

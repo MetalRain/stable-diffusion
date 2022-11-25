@@ -1,7 +1,8 @@
 stable-diffusion/
 explore/
-sd-v1-4.ckpt
+*.ckpt
 __pycache__
 *.pyc
 *.pyi
 task_db
+ldm

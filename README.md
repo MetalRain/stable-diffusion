@@ -12,13 +12,10 @@ https://www.assemblyai.com/blog/how-to-run-stable-diffusion-locally-to-generate-
 ## Install instructions
 
 1. Install conda
-```sh
-bash ./scripts/Miniconda3-py38_4.12.0-Linux-x86_64.sh
-```
 
 2. Clone repo
 ```sh
-git clone https://github.com/CompVis/stable-diffusion.git
+git clone git@github.com:Stability-AI/stablediffusion.git stable-diffusion
 cd stable-diffusion/
 ```
 
@@ -30,9 +27,19 @@ conda activate ldm
 
 4. Download stable diffusion weights
 ```sh
-curl https://www.googleapis.com/storage/v1/b/aai-blog-files/o/sd-v1-4.ckpt?alt=media > sd-v1-4.ckpt
+curl https://huggingface.co/stabilityai/stable-diffusion-2/resolve/main/768-v-ema.ckpt > 768-v-ema.ckpt
 ```
-You should have `sd-v1-4.ckpt` file at root of this folder.
+You should have `768-v-ema.ckpt` file at root of this folder.
+
+5. Symlink ldm folder
+Stable diffusion imports code from `stable-diffusion/ldm`
+
+Link it to folder `ldm`
+
+```sh
+ln -s ./stable-diffusion/ldm ./ldm
+```
+
 
 ## Usage
 

@@ -1,4 +1,3 @@
-from importlib import import_module
 import datetime, time, random, os, gc
 import PIL, cv2, torch
 import numpy as np
@@ -8,17 +7,10 @@ from einops import rearrange, repeat
 from torch import autocast
 from pytorch_lightning import seed_everything
 
-# from ldm.util import instantiate_from_config
-ldm_util = import_module("stable-diffusion.ldm.util")
-instantiate_from_config = ldm_util.instantiate_from_config
-
-# from ldm.models.diffusion.ddim import DDIMSampler
-ddim = import_module("stable-diffusion.ldm.models.diffusion.ddim")
-DDIMSampler = ddim.DDIMSampler
-
-# from ldm.models.diffusion.plms import PLMSSampler
-plms = import_module("stable-diffusion.ldm.models.diffusion.plms")
-PLMSSampler = plms.PLMSSampler
+from ldm.util import instantiate_from_config
+from ldm.models.diffusion.ddim import DDIMSampler
+from ldm.models.diffusion.plms import PLMSSampler
+from ldm.models.diffusion.dpm_solver import DPMSolverSampler
 
 # Color correction from skimage
 # https://github.com/scikit-image/scikit-image/blob/v0.19.2/skimage/exposure/histogram_matching.py#L24-L85
@@ -189,7 +181,7 @@ class DiffusionRunner:
             seed = static_seed or random.randint(0, 1_000_000_000)
             seed_everything(seed)
             if task.plms:
-                sampler = PLMSSampler(self.model)
+                sampler = DPMSolverSampler(self.model)
             else:
                 sampler = DDIMSampler(self.model)
 
@@ -552,8 +544,15 @@ class DiffusionTaskOptions:
             task_id=None,
             task_group_id=None,
             image_id=None):
-        self.ckpt = 'sd-v1-4.ckpt'
-        self.config = 'stable-diffusion/configs/stable-diffusion/v1-inference.yaml'
+        #self.ckpt = 'sd-v1-4.ckpt'
+        #self.config = 'stable-diffusion/configs/stable-diffusion/v1-inference.yaml'
+
+        self.ckpt = '512-base-ema.ckpt'
+        self.config = 'stable-diffusion/configs/stable-diffusion/v2-inference.yaml'
+
+        #self.ckpt = '768-v-ema.ckpt'
+        #self.config = 'stable-diffusion/configs/stable-diffusion/v2-inference-v.yaml'
+
         self.prompt = prompt
         self.outdir = outdir
         self.scales = scales
